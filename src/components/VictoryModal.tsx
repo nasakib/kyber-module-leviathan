@@ -1,5 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import { LevelDefinition, LevelMasteryStatus } from '../types/game';
-import { Trophy, Star, ArrowRight, RotateCcw, BookOpen, ShieldCheck, Zap, Award } from 'lucide-react';
+import { Trophy, Star, ArrowRight, RotateCcw, BookOpen, ShieldCheck, Zap, Award, Sparkles } from 'lucide-react';
+import { soundEngine } from '../utils/audio';
 
 interface VictoryModalProps {
   isOpen: boolean;
@@ -24,14 +26,71 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   onReplay,
   onOpenCurriculum,
 }) => {
+  const [displayedScore, setDisplayedScore] = useState<number>(0);
+  const [visibleStars, setVisibleStars] = useState<number>(0);
+
+  // Staggered star animation and score counter tween
+  useEffect(() => {
+    if (!isOpen) {
+      setDisplayedScore(0);
+      setVisibleStars(0);
+      return;
+    }
+
+    // Staggered star reveals
+    const starTimers: ReturnType<typeof setTimeout>[] = [];
+    for (let s = 1; s <= stars; s++) {
+      const t = setTimeout(() => {
+        setVisibleStars(s);
+        soundEngine.playDetentTick();
+      }, s * 350);
+      starTimers.push(t);
+    }
+
+    // Score ticker tween
+    const targetScore = masteryStatus?.score || (stars * 1000);
+    const duration = 1200;
+    const startTime = performance.now();
+
+    let animFrame: number;
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayedScore(Math.round(eased * targetScore));
+
+      if (progress < 1) {
+        animFrame = requestAnimationFrame(tick);
+      }
+    };
+    animFrame = requestAnimationFrame(tick);
+
+    return () => {
+      starTimers.forEach(clearTimeout);
+      cancelAnimationFrame(animFrame);
+    };
+  }, [isOpen, stars, masteryStatus?.score]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn select-none">
-      <div className="relative w-full max-w-md bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl p-6 text-center space-y-5">
-        {/* Trophy Icon */}
-        <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/20 animate-bounce">
+      <div className="relative w-full max-w-md bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl p-6 text-center space-y-5 overflow-hidden">
+        {/* Animated Celebration Aura */}
+        <div
+          className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-gradient-to-tr from-cyan-500/15 via-emerald-500/15 to-transparent blur-2xl pointer-events-none animate-spin"
+          style={{ animationDuration: '10s' }}
+        />
+        <div
+          className="absolute -bottom-16 -right-16 w-64 h-64 rounded-full bg-gradient-to-br from-amber-500/15 via-purple-500/15 to-transparent blur-2xl pointer-events-none animate-spin"
+          style={{ animationDuration: '12s' }}
+        />
+
+        {/* Trophy Icon with Shimmer */}
+        <div className="relative mx-auto flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/25 to-cyan-500/25 border border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/20 animate-bounce">
           <Trophy className="w-8 h-8" />
+          <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber-400 animate-pulse" />
         </div>
 
         <div>
@@ -46,20 +105,31 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           </p>
         </div>
 
-        {/* Stars Awarded */}
-        <div className="flex items-center justify-center space-x-2 py-2">
-          {[1, 2, 3].map((starIdx) => (
-            <div
-              key={starIdx}
-              className={`p-2 rounded-xl border transition-all ${
-                starIdx <= stars
-                  ? 'bg-amber-950/50 border-amber-500/50 text-amber-400 shadow-md shadow-amber-500/20 scale-110'
-                  : 'bg-slate-950 border-slate-800 text-slate-700'
-              }`}
-            >
-              <Star className="w-6 h-6 fill-current" />
-            </div>
-          ))}
+        {/* Animated Score Readout */}
+        <div className="py-1 px-4 bg-slate-950/80 rounded-xl border border-slate-800/80 inline-block font-mono">
+          <span className="text-[10px] uppercase tracking-wider text-slate-400 mr-2">Calculated Score:</span>
+          <span className="text-base sm:text-lg font-bold text-emerald-400 tracking-tight">
+            {displayedScore.toLocaleString()} PTS
+          </span>
+        </div>
+
+        {/* Staggered Stars Awarded */}
+        <div className="flex items-center justify-center space-x-2.5 py-1">
+          {[1, 2, 3].map((starIdx) => {
+            const isEarned = starIdx <= visibleStars;
+            return (
+              <div
+                key={starIdx}
+                className={`p-2.5 rounded-xl border transition-all duration-300 ${
+                  isEarned
+                    ? 'bg-amber-950/60 border-amber-400/80 text-amber-400 shadow-lg shadow-amber-500/30 scale-110 rotate-3'
+                    : 'bg-slate-950 border-slate-800 text-slate-700 scale-95'
+                }`}
+              >
+                <Star className={`w-6 h-6 fill-current ${isEarned ? 'animate-pulse' : ''}`} />
+              </div>
+            );
+          })}
         </div>
 
         <div className="text-xs font-mono text-slate-400">

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { CurriculumContent } from '../types/game';
-import { BookOpen, Compass, FileSpreadsheet, Variable, X, Sparkles } from 'lucide-react';
+import { BookOpen, Compass, FileSpreadsheet, Variable, X, Sparkles, PlayCircle, Eye, EyeOff } from 'lucide-react';
 import { MathView, MathText } from './MathView';
+import { AnimatedConceptCanvas } from './AnimatedConceptCanvas';
 
 interface CurriculumCardProps {
   curriculum: CurriculumContent;
@@ -16,7 +17,8 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'standards' | 'intuition' | 'derivation' | 'inspector'>('derivation');
+  const [activeTab, setActiveTab] = useState<'standards' | 'intuition' | 'derivation' | 'inspector' | 'animation'>('derivation');
+  const [showAnimatedPreview, setShowAnimatedPreview] = useState<boolean>(true);
 
   if (!isOpen) return null;
 
@@ -88,6 +90,18 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
             <Variable className="w-4 h-4" />
             <span>Formula Inspector</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('animation')}
+            className={`flex items-center space-x-2 px-3.5 py-3 text-xs sm:text-sm font-mono border-b-2 transition-all ${
+              activeTab === 'animation'
+                ? 'border-emerald-400 text-emerald-300 font-semibold bg-emerald-950/30'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <PlayCircle className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span>Visual Animation Lab</span>
+          </button>
         </div>
 
         {/* Content Body */}
@@ -105,11 +119,25 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
 
           {/* TAB 1: DERIVATION STEPS */}
           {activeTab === 'derivation' && (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               <div className="text-xs text-slate-400 flex items-center justify-between pb-1 border-b border-slate-800">
                 <span>Textbook-grade algebraic derivation with line-by-line justification:</span>
-                <span className="text-[11px] text-cyan-400 font-semibold">{curriculum.stepByStepSolution.length} Steps</span>
+                <button
+                  onClick={() => setShowAnimatedPreview(!showAnimatedPreview)}
+                  className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-mono transition-colors border border-slate-700"
+                >
+                  {showAnimatedPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showAnimatedPreview ? 'Hide Dynamic Animation' : 'Show Dynamic Animation'}</span>
+                </button>
               </div>
+
+              {showAnimatedPreview && (
+                <AnimatedConceptCanvas
+                  topicCategory={curriculum.topicCategory}
+                  standardName={curriculum.standardName}
+                  currentParams={currentParams}
+                />
+              )}
 
               {curriculum.stepByStepSolution.map((step) => (
                 <div
@@ -191,6 +219,42 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: VISUAL ANIMATION LAB */}
+          {activeTab === 'animation' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-950/90 border border-slate-800 rounded-xl space-y-2">
+                <div className="flex items-center space-x-2 text-cyan-400 font-bold text-sm">
+                  <PlayCircle className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span>Real-Time Geometric & Physical Modeling Engine</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Mathematical formulas represent spatial transformations and physical laws. Use the playback controls and interactive phase scrubber below to inspect how changing parameters transforms the geometry in real-time.
+                </p>
+              </div>
+
+              <AnimatedConceptCanvas
+                topicCategory={curriculum.topicCategory}
+                standardName={curriculum.standardName}
+                currentParams={currentParams}
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">What to Observe</span>
+                  <p className="text-slate-300 leading-relaxed text-[11px]">
+                    Notice how mathematical invariants (such as the angle of ascent $\Delta y/\Delta x$, parabolic focus, and matrix shear volume) remain geometrically consistent across coordinate shifts.
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-cyan-400 font-bold uppercase tracking-wider text-[10px]">Operational Takeaway</span>
+                  <p className="text-slate-300 leading-relaxed text-[11px]">
+                    Apply this dynamic intuition directly to your control terminal dials to satisfy target constraints with analytical precision rather than random guessing.
+                  </p>
+                </div>
               </div>
             </div>
           )}

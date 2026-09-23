@@ -5,6 +5,7 @@ import { soundEngine } from '../utils/audio';
 import { MathView, MathText } from './MathView';
 import { EnergyBudgetMeter } from './EnergyBudgetMeter';
 import { SynthesizerConsole } from './controls/SynthesizerConsole';
+import { OperatorMiniVisualizer } from './controls/OperatorMiniVisualizer';
 
 interface ControlTerminalProps {
   level: LevelDefinition;
@@ -320,6 +321,11 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
                       <span>{ctrl.geometricRole}</span>
                     </div>
                   )}
+
+                  {/* Live Animated Geometric Response Visualizer */}
+                  <div className="pt-1">
+                    <OperatorMiniVisualizer paramKey={ctrl.key} currentValue={val} />
+                  </div>
 
                   {/* Why changing this meets the objective */}
                   {ctrl.objectiveHint && (
