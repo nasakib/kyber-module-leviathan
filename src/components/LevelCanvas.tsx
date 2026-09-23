@@ -658,8 +658,9 @@ export const LevelCanvas: React.FC<LevelCanvasProps> = ({
     ctx.fillText(label, toX + 8, toY - 6);
   };
 
-  // Render Obstacle Barriers
+  // Render Obstacle Barriers & Dynamic Mechanics (Harmonic Gates, Mirrors, Membranes, Boss Core)
   const renderObstacles = (ctx: CanvasRenderingContext2D) => {
+    // 1. Static obstacles
     for (const obs of level.obstacles) {
       const [ox, oy] = toScreen(obs.x, obs.y);
       const w = obs.width * zoom;
@@ -696,6 +697,143 @@ export const LevelCanvas: React.FC<LevelCanvasProps> = ({
         ctx.textAlign = 'center';
         ctx.fillText(obs.label, ox, oy);
       }
+      ctx.restore();
+    }
+
+    // 2. Harmonic Oscillating Barriers
+    if (level.harmonicObstacles && level.harmonicObstacles.length > 0) {
+      const timeSec = Date.now() / 1000;
+      for (const harm of level.harmonicObstacles) {
+        const gapCenterY = harm.baseY + harm.amplitude * Math.sin(harm.frequency * timeSec + harm.phase);
+        const [hx, hCenterY] = toScreen(harm.x, gapCenterY);
+        const hw = harm.width * zoom;
+        const halfGapScreen = (harm.gapSize / 2) * zoom;
+        const [, screenTop] = toScreen(0, level.bounds.maxY + 5);
+        const [, screenBottom] = toScreen(0, level.bounds.minY - 5);
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.25)';
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2;
+
+        // Top barrier
+        const topBarHeight = (hCenterY - halfGapScreen) - screenTop;
+        if (topBarHeight > 0) {
+          ctx.fillRect(hx - hw / 2, screenTop, hw, topBarHeight);
+          ctx.strokeRect(hx - hw / 2, screenTop, hw, topBarHeight);
+        }
+        // Bottom barrier
+        const botBarHeight = screenBottom - (hCenterY + halfGapScreen);
+        if (botBarHeight > 0) {
+          ctx.fillRect(hx - hw / 2, hCenterY + halfGapScreen, hw, botBarHeight);
+          ctx.strokeRect(hx - hw / 2, hCenterY + halfGapScreen, hw, botBarHeight);
+        }
+
+        // Animated oscillating gap target
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(hx, hCenterY, halfGapScreen, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.font = '9px "JetBrains Mono"';
+        ctx.fillStyle = '#f43f5e';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Harmonic Gate [A=${harm.amplitude.toFixed(1)}, ω=${harm.frequency.toFixed(1)}]`, hx, hCenterY - halfGapScreen - 8);
+        ctx.restore();
+      }
+    }
+
+    // 3. Deflector Mirrors
+    if (level.mirrors && level.mirrors.length > 0) {
+      for (const mirror of level.mirrors) {
+        const [p1x, p1y] = toScreen(mirror.p1.x, mirror.p1.y);
+        const [p2x, p2y] = toScreen(mirror.p2.x, mirror.p2.y);
+        const midX = (p1x + p2x) / 2;
+        const midY = (p1y + p2y) / 2;
+
+        ctx.save();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(p1x, p1y);
+        ctx.lineTo(p2x, p2y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Draw normal arrow
+        const normLen = 22;
+        const normAngle = Math.atan2(-mirror.normal.y, mirror.normal.x);
+        drawArrow(ctx, midX, midY, midX + normLen * Math.cos(normAngle), midY + normLen * Math.sin(normAngle), '#c084fc', 'n̂');
+        ctx.restore();
+      }
+    }
+
+    // 4. Spline Continuity Membranes
+    if (level.membranes && level.membranes.length > 0) {
+      for (const mem of level.membranes) {
+        const [mx] = toScreen(mem.x, 0);
+        const [, topY] = toScreen(0, level.bounds.maxY);
+        const [, botY] = toScreen(0, level.bounds.minY);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(mx, topY);
+        ctx.lineTo(mx, botY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.font = '10px "JetBrains Mono"';
+        ctx.fillStyle = '#e879f9';
+        ctx.fillText(`Spline Gate (${mem.requiredContinuity})`, mx + 6, topY + 24);
+        ctx.restore();
+      }
+    }
+
+    // 5. Boss Mechanics (Eigen-Leviathan)
+    if (level.isBossLevel && level.bossMatrix) {
+      const bossPos = level.bossCorePosition ?? { x: 3, y: 0 };
+      const [bx, by] = toScreen(bossPos.x, bossPos.y);
+      const time = Date.now() / 600;
+
+      ctx.save();
+      // Outer distortion shield
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#f43f5e';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(bx, by, 38 + 6 * Math.sin(time), 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Core pulsating sphere
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.beginPath();
+      ctx.arc(bx, by, 24, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Boss title
+      ctx.font = 'bold 11px "JetBrains Mono"';
+      ctx.fillStyle = '#fca5a5';
+      ctx.textAlign = 'center';
+      ctx.fillText('EIGEN-LEVIATHAN CORE', bx, by - 50);
+
+      // Invariant eigenvector axis lines
+      const [e1x, e1y] = toScreen(bossPos.x + 2.5, bossPos.y + 2.5);
+      const [e2x, e2y] = toScreen(bossPos.x - 2.5, bossPos.y - 2.5);
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(e1x, e1y);
+      ctx.lineTo(e2x, e2y);
+      ctx.stroke();
+      ctx.setLineDash([]);
       ctx.restore();
     }
   };
@@ -983,7 +1121,60 @@ export const LevelCanvas: React.FC<LevelCanvasProps> = ({
       });
     }
 
-    const success = hits.length >= level.targets.length && !blocked;
+    // Check Harmonic Obstacles
+    if (!blocked && level.harmonicObstacles && level.harmonicObstacles.length > 0) {
+      const timeSec = Date.now() / 1000;
+      for (const harm of level.harmonicObstacles) {
+        const gapY = harm.baseY + harm.amplitude * Math.sin(harm.frequency * timeSec + harm.phase);
+        let beamYAtHarmX: number | null = null;
+        if (level.type === 'linear_beam') {
+          beamYAtHarmX = (params.m ?? 1) * harm.x + (params.b ?? 0);
+        } else if (level.type === 'parabolic_arc') {
+          beamYAtHarmX = (params.a ?? -0.2) * Math.pow(harm.x - (params.h ?? 0), 2) + (params.k ?? 0);
+        } else if (level.type === 'tangent_blade') {
+          const fn = level.calculusFunction ?? ((x: number) => x * x);
+          const df = level.calculusDerivative ?? ((x: number) => 2 * x);
+          const x0 = params.x0 ?? 2;
+          const h = params.h ?? 0.05;
+          const slope = h > 0.08 ? (fn(x0 + h) - fn(x0)) / h : df(x0);
+          beamYAtHarmX = fn(x0) + slope * (harm.x - x0);
+        }
+
+        if (beamYAtHarmX !== null) {
+          if (Math.abs(beamYAtHarmX - gapY) > harm.gapSize / 2 + 0.15) {
+            blocked = true;
+            playObstacleSound?.();
+            break;
+          }
+        }
+      }
+    }
+
+    // Check Boss Level Eigen-Leviathan condition
+    if (level.isBossLevel && level.bossMatrix) {
+      if (level.type === 'matrix_warp') {
+        const theta = params.theta_deg ?? 0;
+        if (Math.abs(theta - 45) < 6 || Math.abs(theta - 225) < 6) {
+          hits.push('boss_core');
+          const bossPos = level.bossCorePosition ?? { x: 3, y: 0 };
+          const [sx, sy] = toScreen(bossPos.x, bossPos.y);
+          addExplosion(sx, sy);
+          playHitSound?.(level.targets.length);
+        }
+      } else if (level.type === 'linear_beam') {
+        const m = params.m ?? 0;
+        if (Math.abs(m - 1.0) < 0.1) {
+          hits.push('boss_core');
+          const bossPos = level.bossCorePosition ?? { x: 3, y: 0 };
+          const [sx, sy] = toScreen(bossPos.x, bossPos.y);
+          addExplosion(sx, sy);
+          playHitSound?.(level.targets.length);
+        }
+      }
+    }
+
+    const requiredTargetCount = level.isBossLevel ? level.targets.length + 1 : level.targets.length;
+    const success = hits.length >= requiredTargetCount && !blocked;
     onSimulationComplete?.(success, hits);
   };
 

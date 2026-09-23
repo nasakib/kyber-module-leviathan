@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ALL_LEVELS } from './data/levels';
-import { LevelDefinition, AppMode, UserProgressStore } from './types/game';
+import { LevelDefinition, AppMode, UserProgressStore, HypothesisOption, LevelMasteryStatus } from './types/game';
 import { HUD } from './components/HUD';
 import { LevelCanvas } from './components/LevelCanvas';
 import { ControlTerminal } from './components/ControlTerminal';
@@ -8,6 +8,8 @@ import { CurriculumCard } from './components/CurriculumCard';
 import { LevelSelectModal } from './components/LevelSelectModal';
 import { VictoryModal } from './components/VictoryModal';
 import { SandboxStudio } from './components/SandboxStudio';
+import { HypothesisModal } from './components/HypothesisModal';
+import { checkEnergyBudget } from './components/EnergyBudgetMeter';
 import { soundEngine } from './utils/audio';
 import confetti from 'canvas-confetti';
 
@@ -34,6 +36,9 @@ export const App: React.FC = () => {
   // UI Drawers & Modals
   const [isCurriculumOpen, setIsCurriculumOpen] = useState<boolean>(false);
   const [isLevelSelectOpen, setIsLevelSelectOpen] = useState<boolean>(false);
+  const [isHypothesisOpen, setIsHypothesisOpen] = useState<boolean>(false);
+  const [selectedHypothesisOption, setSelectedHypothesisOption] = useState<HypothesisOption | null>(null);
+  const [masteryStatus, setMasteryStatus] = useState<LevelMasteryStatus | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   // User Progress Store (localStorage persistence)
@@ -75,6 +80,8 @@ export const App: React.FC = () => {
     setTargetsHitCount(0);
     setHasWon(false);
     setIsFiring(false);
+    setSelectedHypothesisOption(null);
+    setMasteryStatus(null);
   }, [currentLevel.id]);
 
   // Audio mute toggle
@@ -132,6 +139,20 @@ export const App: React.FC = () => {
       setHasWon(true);
       soundEngine.playVictoryFanfare();
 
+      // Check mastery status
+      const budgetMet = checkEnergyBudget(currentLevel.energyBudget, params).met;
+      const hypothesisCorrect = selectedHypothesisOption?.isCorrect ?? false;
+      const multiplier = selectedHypothesisOption?.isCorrect ? (currentLevel.hypothesis?.multiplier ?? 2.0) : 1.0;
+      const score = Math.round(1000 * stars * multiplier);
+
+      const status: LevelMasteryStatus = {
+        cleared: true,
+        budgetMet,
+        hypothesisCorrect,
+        score,
+      };
+      setMasteryStatus(status);
+
       // Confetti burst
       confetti({
         particleCount: 100,
@@ -153,6 +174,7 @@ export const App: React.FC = () => {
             stars: updatedStars,
             bestAttempts: updatedAttempts,
             unlocked: true,
+            masteryStatus: status,
           }
         };
 
@@ -270,6 +292,9 @@ export const App: React.FC = () => {
               onFire={handleFire}
               onReset={handleReset}
               onAutoCalculate={handleAutoCalculate}
+              onOpenHypothesis={() => setIsHypothesisOpen(true)}
+              isHypothesisAnswered={selectedHypothesisOption !== null}
+              hypothesisCorrect={selectedHypothesisOption?.isCorrect ?? false}
               isFiring={isFiring}
               attempts={attempts}
               targetsHitCount={targetsHitCount}
@@ -289,6 +314,17 @@ export const App: React.FC = () => {
         isOpen={isCurriculumOpen}
         onClose={() => setIsCurriculumOpen(false)}
       />
+
+      {/* Predictive Hypothesis Modal (Gold Mastery) */}
+      {currentLevel.hypothesis && (
+        <HypothesisModal
+          hypothesis={currentLevel.hypothesis}
+          isOpen={isHypothesisOpen}
+          selectedOptionId={selectedHypothesisOption?.id ?? null}
+          onSelectOption={(opt) => setSelectedHypothesisOption(opt)}
+          onClose={() => setIsHypothesisOpen(false)}
+        />
+      )}
 
       {/* Sector Map & Level Select Modal */}
       <LevelSelectModal
@@ -310,6 +346,7 @@ export const App: React.FC = () => {
         level={currentLevel}
         stars={awardedStars}
         attempts={attempts}
+        masteryStatus={masteryStatus ?? undefined}
         hasNextLevel={currentLevelIndex + 1 < ALL_LEVELS.length}
         onNextLevel={handleNextLevel}
         onReplay={() => {

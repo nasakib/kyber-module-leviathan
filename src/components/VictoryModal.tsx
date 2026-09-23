@@ -1,12 +1,12 @@
-import React from 'react';
-import { LevelDefinition } from '../types/game';
-import { Trophy, Star, ArrowRight, RotateCcw, BookOpen } from 'lucide-react';
+import { LevelDefinition, LevelMasteryStatus } from '../types/game';
+import { Trophy, Star, ArrowRight, RotateCcw, BookOpen, ShieldCheck, Zap, Award } from 'lucide-react';
 
 interface VictoryModalProps {
   isOpen: boolean;
   level: LevelDefinition;
   stars: number;
   attempts: number;
+  masteryStatus?: LevelMasteryStatus;
   hasNextLevel: boolean;
   onNextLevel: () => void;
   onReplay: () => void;
@@ -18,6 +18,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   level,
   stars,
   attempts,
+  masteryStatus,
   hasNextLevel,
   onNextLevel,
   onReplay,
@@ -67,6 +68,47 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           {stars === 2 && ' Great calculation efficiency!'}
           {stars === 1 && ' System solved!'}
         </div>
+
+        {/* Tiered Mastery Badges (Bronze, Silver, Gold) */}
+        {masteryStatus && (
+          <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+            <div
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center space-y-1 ${
+                masteryStatus.cleared
+                  ? 'bg-amber-950/40 border-amber-600/50 text-amber-300'
+                  : 'bg-slate-950 border-slate-800 text-slate-600'
+              }`}
+            >
+              <Award className="w-4 h-4 text-amber-500" />
+              <span className="font-bold">Bronze</span>
+              <span className="text-[9px] text-slate-400">Target Cleared</span>
+            </div>
+
+            <div
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center space-y-1 ${
+                masteryStatus.budgetMet
+                  ? 'bg-slate-800/80 border-slate-400/50 text-slate-200 shadow-sm'
+                  : 'bg-slate-950 border-slate-800 text-slate-600'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-slate-300" />
+              <span className="font-bold">Silver</span>
+              <span className="text-[9px] text-slate-400">Budget Obeyed</span>
+            </div>
+
+            <div
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center space-y-1 ${
+                masteryStatus.hypothesisCorrect
+                  ? 'bg-yellow-950/50 border-yellow-500/60 text-yellow-300 shadow-md shadow-yellow-500/10'
+                  : 'bg-slate-950 border-slate-800 text-slate-600'
+              }`}
+            >
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span className="font-bold">Gold</span>
+              <span className="text-[9px] text-slate-400">Hypothesis Met</span>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col space-y-2 pt-2">

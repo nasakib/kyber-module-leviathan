@@ -137,6 +137,22 @@ export const ALL_LEVELS: LevelDefinition[] = [
     obstacles: [
       { id: 'obs1', x: 1, y: 3.5, width: 0.4, height: 4.5, type: 'shield', label: 'Ion Shield' }
     ],
+    mirrors: [
+      { id: 'mirror_1', p1: { x: 3.2, y: 4.8 }, p2: { x: 4.8, y: 3.2 }, normal: { x: -0.707, y: 0.707 } }
+    ],
+    energyBudget: {
+      maxL1Norm: 3.0
+    },
+    hypothesis: {
+      id: 'hyp_1_2',
+      prompt: 'If the target receptor requires reflected slope $m_2 = -2.0$, what must be the emitter slope $m_1$ to satisfy the perpendicular reflection condition $m_1 \\cdot m_2 = -1$?',
+      options: [
+        { id: 'a', label: 'm_1 = -0.5', isCorrect: false, explanation: 'A slope of -0.5 gives $(-0.5)(-2) = +1$, which is parallel in sign, not orthogonal.' },
+        { id: 'b', label: 'm_1 = +0.5', isCorrect: true, explanation: 'Correct! Negative reciprocal: $m_1 = -\\frac{1}{m_2} = -\\frac{1}{-2} = +0.5$.' },
+        { id: 'c', label: 'm_1 = +2.0', isCorrect: false, explanation: 'Slope +2.0 is equal in magnitude, giving product -4.' }
+      ],
+      multiplier: 2.0
+    },
     bounds: { minX: -1, maxX: 7, minY: -1, maxY: 9 },
     curriculum: {
       standard: 'CCSS.MATH.CONTENT.HSG.GPE.B.5',
@@ -413,6 +429,31 @@ export const ALL_LEVELS: LevelDefinition[] = [
     obstacles: [
       { id: 'asteroid_wall', x: 3, y: 1.5, width: 0.4, height: 3.0, type: 'shield', label: 'Pillar (Height 3)' }
     ],
+    harmonicObstacles: [
+      {
+        id: 'harm_gate_1',
+        type: 'harmonic_barrier',
+        x: 4.5,
+        amplitude: 0.8,
+        frequency: 1.5,
+        phase: 0,
+        baseY: 3.5,
+        width: 0.4,
+        gapSize: 2.2
+      }
+    ],
+    energyBudget: {
+      maxL1Norm: 9.0
+    },
+    hypothesis: {
+      id: 'hyp_2_1',
+      prompt: 'For the vertex form equation $y = a(x - h)^2 + k$, if $a < 0$, does the coordinate $(h, k)$ represent a global maximum or global minimum?',
+      options: [
+        { id: 'a', label: 'Global Maximum (Apogee)', isCorrect: true, explanation: 'Since $a < 0$, the quadratic term $a(x-h)^2 \\le 0$ for all $x$, making $k$ the highest possible point.' },
+        { id: 'b', label: 'Global Minimum (Perigee)', isCorrect: false, explanation: 'A minimum occurs only when $a > 0$ where the parabola opens upward.' }
+      ],
+      multiplier: 2.0
+    },
     bounds: { minX: -1, maxX: 8, minY: -1, maxY: 7 },
     curriculum: {
       standard: 'CCSS.MATH.CONTENT.HSA.CED.A.1',
@@ -973,6 +1014,18 @@ export const ALL_LEVELS: LevelDefinition[] = [
       { id: 'pod4', x: 1.414, y: -1.414, radius: 0.45, label: 'Pod 4 (315°)' }
     ],
     obstacles: [],
+    energyBudget: {
+      requireUnitDeterminant: true
+    },
+    hypothesis: {
+      id: 'hyp_3_3',
+      prompt: 'Does a 2D pure rotation matrix $R(\\theta) = \\begin{bmatrix} \\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta \\end{bmatrix}$ alter the geometric area of transformed figures?',
+      options: [
+        { id: 'a', label: 'Yes, it scales area by \\sin(\\theta)', isCorrect: false, explanation: 'Trigonometric components describe orientation, not area dilation.' },
+        { id: 'b', label: 'No, because \\det(R) = \\cos^2\\theta + \\sin^2\\theta = 1.0', isCorrect: true, explanation: 'Exact! Because the determinant is identically 1, rotation is a rigid motion (isometry) that perfectly preserves area.' }
+      ],
+      multiplier: 2.0
+    },
     bounds: { minX: -3, maxX: 3, minY: -3, maxY: 3 },
     curriculum: {
       standard: 'CCSS.MATH.CONTENT.HSN.VM.C.11 & Linear Algebra: Orthogonal Matrices',
@@ -1302,6 +1355,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     obstacles: [
       { id: 'slant_wall', x: 2.5, y: 0.0, width: 0.5, height: 1.5, type: 'shield', label: 'Slant Shield' }
     ],
+    energyBudget: {
+      maxL1Norm: 2.5
+    },
+    hypothesis: {
+      id: 'hyp_4_3',
+      prompt: 'At a critical point where $f\'(x) = 0$, if the second derivative is $f\'\'(x) < 0$, what does this guarantee about the local behavior of the curve?',
+      options: [
+        { id: 'a', label: 'Local Maximum (Concave Downward)', isCorrect: true, explanation: 'By the Second Derivative Test, $f\'\'(x) < 0$ means the slope is decreasing across the stationary point, forming a local peak (crest).' },
+        { id: 'b', label: 'Local Minimum (Concave Upward)', isCorrect: false, explanation: 'A local minimum requires $f\'\'(x) > 0$.' },
+        { id: 'c', label: 'Point of Inflection', isCorrect: false, explanation: 'Inflection requires $f\'\'(x) = 0$ with concavity sign change.' }
+      ],
+      multiplier: 2.0
+    },
     bounds: { minX: -2.5, maxX: 5, minY: -3, maxY: 4 },
     curriculum: {
       standard: 'AP Calculus AB: FUN-4 (Fermat\'s Theorem on Critical Points)',
@@ -1707,6 +1773,21 @@ export const ALL_LEVELS: LevelDefinition[] = [
       { id: 'kyber_root', x: 3.0, y: 2.0, radius: 0.55, label: 'Decrypted Key [3, 2]' }
     ],
     obstacles: [],
+    isBossLevel: true,
+    bossMatrix: { a: 2, b: 1, c: 1, d: 2 },
+    bossCorePosition: { x: 3.0, y: 2.0 },
+    energyBudget: {
+      maxL1Norm: 3.0
+    },
+    hypothesis: {
+      id: 'hyp_5_4',
+      prompt: 'In Kyber (ML-KEM), why does the decoder successfully retrieve message $m$ even in the presence of channel noise $e$?',
+      options: [
+        { id: 'a', label: 'Because noise $|e| < q/4$ is eliminated by modular rounding quantization', isCorrect: true, explanation: 'Precisely! Because Gaussian perturbation $|e|$ is bounded beneath $q/4$, the rounding operator collapses continuous noisy values back to the exact discrete integer code points.' },
+        { id: 'b', label: 'Because the noise vector is eliminated by matrix determinant inversion', isCorrect: false, explanation: 'Noise is additive in the ciphertext payload; it requires active discrete rounding to remove.' }
+      ],
+      multiplier: 2.5
+    },
     bounds: { minX: -1, maxX: 5, minY: -1, maxY: 4 },
     curriculum: {
       standard: 'NIST FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)',

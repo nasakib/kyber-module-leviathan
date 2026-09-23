@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { LevelDefinition } from '../types/game';
-import { Play, RotateCcw, Lightbulb, Minus, Plus, Target, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, RotateCcw, Lightbulb, Minus, Plus, Target, CheckCircle2, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 import { MathView, MathText } from './MathView';
+import { EnergyBudgetMeter } from './EnergyBudgetMeter';
 
 interface ControlTerminalProps {
   level: LevelDefinition;
@@ -11,6 +12,9 @@ interface ControlTerminalProps {
   onFire: () => void;
   onReset: () => void;
   onAutoCalculate: () => void;
+  onOpenHypothesis?: () => void;
+  isHypothesisAnswered?: boolean;
+  hypothesisCorrect?: boolean;
   isFiring: boolean;
   attempts: number;
   targetsHitCount: number;
@@ -24,6 +28,9 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
   onFire,
   onReset,
   onAutoCalculate,
+  onOpenHypothesis,
+  isHypothesisAnswered,
+  hypothesisCorrect,
   isFiring,
   attempts,
   targetsHitCount,
@@ -149,6 +156,11 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Energy Budget Constraints (Silver Mastery) */}
+      {level.energyBudget && (
+        <EnergyBudgetMeter budget={level.energyBudget} params={params} />
+      )}
 
       {/* Control Sliders and Fine-Tuning Operators */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -292,6 +304,29 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
             <Lightbulb className="w-3.5 h-3.5" />
             <span>{attempts >= 2 ? 'Auto-Calculate' : 'Review Math / Hint'}</span>
           </button>
+
+          {level.hypothesis && (
+            <button
+              onClick={onOpenHypothesis}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-mono transition-all border ${
+                isHypothesisAnswered
+                  ? hypothesisCorrect
+                    ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
+                    : 'bg-rose-950/60 border-rose-500/50 text-rose-300'
+                  : 'bg-cyan-950/50 hover:bg-cyan-900/60 border-cyan-500/40 text-cyan-300'
+              }`}
+              title="Hypothesize behavior before firing to win Gold Mastery"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>
+                {isHypothesisAnswered
+                  ? hypothesisCorrect
+                    ? '★ Gold Hypothesis Correct'
+                    : 'Hypothesis Refuted'
+                  : 'Gold Hypothesis (Predict)'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Primary Fire Button */}

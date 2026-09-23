@@ -1,6 +1,15 @@
 // VectorForge: The Coordinate Engine - Core Type Definitions
 
-export type SectorId = 'linear' | 'parabola' | 'matrix' | 'calculus' | 'lattice';
+export type SectorId = 
+  | 'linear' 
+  | 'parabola' 
+  | 'matrix' 
+  | 'calculus' 
+  | 'lattice'
+  | 'kinetics'
+  | 'warp'
+  | 'tangent'
+  | 'vault';
 
 export type LevelType = 
   | 'linear_beam'       // y = mx + b, reflections, systems
@@ -8,6 +17,72 @@ export type LevelType =
   | 'matrix_warp'       // 2x2 linear transformations, shear, rotation, det
   | 'tangent_blade'     // secants, tangent lines, derivatives, critical points
   | 'lattice_cvp';      // discrete 2D lattice, reduction, noisy decryption
+
+export interface Vector2D {
+  x: number;
+  y: number;
+}
+
+export interface Matrix2D {
+  a: number; // m00
+  b: number; // m01
+  c: number; // m10
+  d: number; // m11
+}
+
+export interface HarmonicObstacle {
+  id: string;
+  type: 'harmonic_barrier';
+  x: number;
+  amplitude: number;
+  frequency: number; // omega in rad/s
+  phase: number;     // phi in rad
+  baseY: number;
+  width: number;
+  gapSize: number;
+}
+
+export interface DeflectorMirror {
+  id: string;
+  p1: Vector2D;
+  p2: Vector2D;
+  normal: Vector2D;
+  receptiveAngleRange?: [number, number];
+}
+
+export interface SplineMembrane {
+  x: number; // junction coordinate c
+  requiredContinuity: 'C0' | 'C1';
+  tolerance: number; // epsilon for derivative match
+}
+
+export interface HypothesisOption {
+  id: string;
+  label: string;
+  isCorrect: boolean;
+  explanation: string;
+}
+
+export interface HypothesisQuestion {
+  id: string;
+  prompt: string;
+  options: HypothesisOption[];
+  multiplier: number; // e.g. 2.0x
+}
+
+export interface EnergyBudget {
+  maxL1Norm?: number;        // Sum of |params|
+  exactTrace?: number;       // For matrices: a + d
+  requireUnitDeterminant?: boolean; // det(M) = 1
+  maxCurvatureIntegral?: number;
+}
+
+export interface LevelMasteryStatus {
+  cleared: boolean;          // Bronze
+  budgetMet: boolean;        // Silver
+  hypothesisCorrect: boolean;// Gold
+  score: number;
+}
 
 export interface TargetNode {
   id: string;
@@ -98,6 +173,49 @@ export interface LevelDefinition {
   calculusFunction?: (x: number) => number;
   calculusDerivative?: (x: number) => number;
   calculusFunctionLatex?: string;
+
+  // Advanced Mechanics
+  harmonicObstacles?: HarmonicObstacle[];
+  mirrors?: DeflectorMirror[];
+  membranes?: SplineMembrane[];
+  energyBudget?: EnergyBudget;
+  hypothesis?: HypothesisQuestion;
+  
+  // Boss Mechanics
+  isBossLevel?: boolean;
+  bossMatrix?: Matrix2D; // For Eigen-Leviathan
+  bossCorePosition?: Vector2D;
+  paperDerivation?: string[];
+}
+
+export interface AdvancedLevelDefinition {
+  id: string;
+  sector: SectorId;
+  levelNumber: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  syllabusStandard: string;
+  
+  // Mechanics
+  harmonicObstacles?: HarmonicObstacle[];
+  mirrors?: DeflectorMirror[];
+  membranes?: SplineMembrane[];
+  energyBudget?: EnergyBudget;
+  hypothesis?: HypothesisQuestion;
+  
+  // Boss Mechanics
+  isBossLevel?: boolean;
+  bossMatrix?: Matrix2D; // For Eigen-Leviathan
+  bossCorePosition?: Vector2D;
+  
+  // Initial parameters & targets
+  initialParams: Record<string, number>;
+  targets: { id: string; position: Vector2D; radius: number }[];
+  staticObstacles: { x: number; y: number; width: number; height: number }[];
+  
+  // Educational Paper Solution
+  paperDerivation: string[];
 }
 
 export interface UserLevelProgress {
@@ -105,6 +223,7 @@ export interface UserLevelProgress {
   stars: number;        // 1, 2, or 3
   bestAttempts: number;
   unlocked: boolean;
+  masteryStatus?: LevelMasteryStatus;
 }
 
 export type UserProgressStore = Record<string, UserLevelProgress>;
@@ -128,3 +247,4 @@ export interface SimulationResult {
   success: boolean;
   message: string;
 }
+
