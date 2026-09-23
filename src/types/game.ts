@@ -1,10 +1,34 @@
+export type LevelId = 1 | 2 | 3 | 4;
+
+export interface GameLevel {
+  id: LevelId;
+  title: string;
+  subtitle: string;
+  category: string; // e.g. "ALGEBRA & VECTOR PHYSICS"
+  description: string;
+  learningObjectives: string[];
+  unlocked: boolean;
+}
+
+export interface MathPhysicsPuzzle {
+  id: string;
+  title: string;
+  question: string;
+  formula: string;
+  conceptExplanation: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  solved: boolean;
+}
+
 export type BossPhaseId = 1 | 2 | 3 | 4;
 
 export interface BossPhase {
   id: BossPhaseId;
   name: string;
   subtitle: string;
-  minHpPercent: number; // e.g. 75 for phase 1, 40 for phase 2
+  minHpPercent: number;
   description: string;
   tacticalTip: string;
 }
@@ -53,7 +77,7 @@ export interface BossProjectile {
 export interface ParryRing {
   id: string;
   radius: number;
-  targetRadius: number; // The sweet spot zone radius (e.g. 70px)
+  targetRadius: number;
   speed: number;
   active: boolean;
   angle: number;
@@ -71,11 +95,11 @@ export type WeaponId = 'kannan' | 'lll' | 'bkz' | 'visor' | 'coolant';
 export interface Weapon {
   id: WeaponId;
   name: string;
-  simpleName: string; // Novice friendly name (e.g. "Anchor Lock")
-  cooldown: number; // total cooldown in seconds
-  currentCooldown: number; // remaining cooldown in seconds
+  simpleName: string;
+  cooldown: number;
+  currentCooldown: number;
   description: string;
-  simpleGuide: string; // Novice friendly explanation
+  simpleGuide: string;
   shortcut: string;
   iconName: string;
 }
@@ -84,31 +108,44 @@ export interface CombatLogEntry {
   id: string;
   timestamp: string;
   text: string;
-  simpleTranslation?: string; // Novice friendly translation
+  simpleTranslation?: string;
   type: 'info' | 'player_action' | 'boss_attack' | 'warning' | 'phase_change' | 'critical';
 }
 
 export interface GameState {
+  // Level Progression
+  activeLevel: LevelId;
+  unlockedLevels: LevelId[];
+  levelProgress: Record<LevelId, boolean>; // completed levels
+  
+  // Active Interactive Puzzle
+  activePuzzle: MathPhysicsPuzzle | null;
+  
   // Boss
-  bossHp: number; // Starts at 768
-  maxBossHp: number; // 768
+  bossHp: number; // Starts at 768 in Boss level
+  maxBossHp: number;
   bossPhase: BossPhaseId;
   
   // Player
   playerHp: number; // Starts at 100
-  maxPlayerHp: number; // 100
-  memoryHeat: number; // 0 to 100%
-  bkzBeta: number; // 20 to 120
-  gramSchmidtVisor: boolean; // toggle
+  maxPlayerHp: number;
+  memoryHeat: number;
+  bkzBeta: number;
+  gramSchmidtVisor: boolean;
+  
+  // Level 1-3 Vector interactive controls
+  vector1: Vector2D;
+  vector2: Vector2D;
+  targetVector: Vector2D;
   
   // Combo & Juice
   comboCount: number;
-  screenShake: number; // screen shake intensity
+  screenShake: number;
   tacticalHint: string;
   
   // Parry / Phase mechanics
-  lovaszAngle: number; // angle skew in radians
-  lovaszThresholdSatisfied: boolean; // delta = 0.75 condition
+  lovaszAngle: number;
+  lovaszThresholdSatisfied: boolean;
   
   // Status
   isGameOver: boolean;

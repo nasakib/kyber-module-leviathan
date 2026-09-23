@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/combatlog.tsx","./src/components/hud.tsx","./src/components/latticecanvas.tsx","./src/types/game.ts","./src/utils/audio.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/combatlog.tsx","./src/components/hud.tsx","./src/components/latticecanvas.tsx","./src/components/levelselect.tsx","./src/components/mathchallengecard.tsx","./src/types/game.ts","./src/utils/audio.ts"],"version":"5.9.3"}
