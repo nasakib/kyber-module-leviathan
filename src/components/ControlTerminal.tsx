@@ -2,6 +2,7 @@ import React from 'react';
 import { LevelDefinition } from '../types/game';
 import { Play, RotateCcw, Lightbulb } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
+import { MathView } from './MathView';
 
 interface ControlTerminalProps {
   level: LevelDefinition;
@@ -28,8 +29,8 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
   targetsHitCount,
   totalTargets,
 }) => {
-  // Compute formatted live formula string
-  const getFormulaDisplay = () => {
+  // Compute formatted live formula LaTeX string
+  const getFormulaDisplay = (): string => {
     if (level.type === 'linear_beam') {
       const m = params.m ?? 1;
       const b = params.b ?? 0;
@@ -42,7 +43,7 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
       const k = params.k ?? 0;
       const hSign = h >= 0 ? '-' : '+';
       const kSign = k >= 0 ? '+' : '-';
-      return `y = ${a.toFixed(2)}(x ${hSign} ${Math.abs(h).toFixed(2)})² ${kSign} ${Math.abs(k).toFixed(2)}`;
+      return `y = ${a.toFixed(2)}(x ${hSign} ${Math.abs(h).toFixed(2)})^2 ${kSign} ${Math.abs(k).toFixed(2)}`;
     }
     if (level.type === 'matrix_warp') {
       const a = params.a ?? (params.theta_deg !== undefined ? Math.cos((params.theta_deg * Math.PI) / 180) : 1);
@@ -50,22 +51,22 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
       const c = params.c ?? (params.theta_deg !== undefined ? Math.sin((params.theta_deg * Math.PI) / 180) : 0);
       const d = params.d ?? (params.theta_deg !== undefined ? Math.cos((params.theta_deg * Math.PI) / 180) : 1);
       const det = a * d - b * c;
-      return `M = [ ${a.toFixed(2)}, ${b.toFixed(2)} ; ${c.toFixed(2)}, ${d.toFixed(2)} ] | det(M) = ${det.toFixed(2)}`;
+      return `M = \\begin{bmatrix} ${a.toFixed(2)} & ${b.toFixed(2)} \\\\ ${c.toFixed(2)} & ${d.toFixed(2)} \\end{bmatrix} \\quad \\det(M) = ${det.toFixed(2)}`;
     }
     if (level.type === 'tangent_blade') {
       const x0 = params.x0 ?? 2;
       const df = level.calculusDerivative ? level.calculusDerivative(x0) : 2 * x0;
       const fn = level.calculusFunction ? level.calculusFunction(x0) : x0 * x0;
-      return `f'(${x0.toFixed(2)}) = ${df.toFixed(2)} | Tangent: y - ${fn.toFixed(2)} = ${df.toFixed(2)}(x - ${x0.toFixed(2)})`;
+      return `f'(${x0.toFixed(2)}) = ${df.toFixed(2)} \\quad \\text{Tangent: } y - ${fn.toFixed(2)} = ${df.toFixed(2)}(x - ${x0.toFixed(2)})`;
     }
     if (level.type === 'lattice_cvp') {
       if (level.id === 's5_l1') {
         const q = params.q_factor ?? 1;
-        return `v₁' = [5, 1]ᵀ - ${q} · [3, 1]ᵀ = [${5 - 3 * q}, ${1 - q}]ᵀ`;
+        return `v_1' = \\begin{bmatrix} 5 \\\\ 1 \\end{bmatrix} - ${q} \\begin{bmatrix} 3 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} ${5 - 3 * q} \\\\ ${1 - q} \\end{bmatrix}`;
       }
       const c1 = params.c1 ?? 0;
       const c2 = params.c2 ?? 0;
-      return `s = ${c1}[2, 1]ᵀ + ${c2}[1, 1]ᵀ = [${2 * c1 + c2}, ${c1 + c2}]ᵀ`;
+      return `s = ${c1}\\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + ${c2}\\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} ${2 * c1 + c2} \\\\ ${c1 + c2} \\end{bmatrix}`;
     }
     return '';
   };
@@ -89,9 +90,9 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
           </div>
         </div>
 
-        {/* Live Formula Badge */}
-        <div className="px-3.5 py-1.5 rounded-lg bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-sm sm:text-base font-semibold shadow-inner truncate max-w-full">
-          {getFormulaDisplay()}
+        {/* Live Symbolic Formula Badge with KaTeX */}
+        <div className="px-4 py-2 rounded-lg bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-sm sm:text-base font-semibold shadow-inner flex items-center overflow-x-auto max-w-full">
+          <MathView math={getFormulaDisplay()} />
         </div>
 
         {/* Telemetry Status */}
@@ -120,7 +121,9 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
             >
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-slate-200 flex items-center space-x-1.5">
-                  <span className="text-cyan-400 font-mono font-bold text-sm">[{ctrl.symbol}]</span>
+                  <span className="text-cyan-400 font-bold text-sm bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-500/20 flex items-center">
+                    <MathView math={ctrl.symbol} />
+                  </span>
                   <span>{ctrl.label}</span>
                 </label>
                 <div className="flex items-center space-x-1">
@@ -182,7 +185,7 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
             title="Reveal hint or auto-calculate theoretical solution"
           >
             <Lightbulb className="w-3.5 h-3.5" />
-            <span>{attempts >= 2 ? 'Auto-Calculate' : 'Get Hint'}</span>
+            <span>{attempts >= 2 ? 'Auto-Calculate' : 'Review Math / Hint'}</span>
           </button>
         </div>
 

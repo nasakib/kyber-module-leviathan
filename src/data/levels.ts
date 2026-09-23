@@ -31,32 +31,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'CCSS.MATH.CONTENT.HSA.CED.A.2',
       standardName: 'Create Equations in Two Variables (Slope-Intercept Form)',
       topicCategory: 'Algebra I',
-      intuition: 'Slope (m) dictates the angle of ascent or descent—for every 1 unit you move right, you move m units up. The y-intercept (b) slides the entire line up or down without changing its direction.',
-      keyFormulaLatex: 'y = m x + b \\quad \\text{where } m = \\frac{y_2 - y_1}{x_2 - x_1}',
+      intuition: 'Slope $m = \\frac{\\Delta y}{\\Delta x}$ represents the rate of vertical elevation change relative to horizontal displacement. The Greek letter Delta ($\\Delta$) denotes change or difference: $\\Delta y = y_2 - y_1$ and $\\Delta x = x_2 - x_1$. The $y$-intercept ($b$) slides the entire line up or down without changing its slope.',
+      keyFormulaLatex: 'm = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1}, \\quad y = mx + b',
       stepByStepSolution: [
         {
           stepNumber: 1,
-          label: 'Calculate Slope (m)',
-          mathExpression: 'm = \\frac{7 - 3}{6 - 2} = \\frac{4}{4} = 1.0',
-          explanation: 'Subtract y-coordinates over x-coordinates between Target α (2, 3) and Target β (6, 7).'
+          label: 'Calculate Delta Differences and Slope (m)',
+          mathExpression: 'm = \\frac{\\Delta y}{\\Delta x} = \\frac{7 - 3}{6 - 2} = \\frac{4}{4} = 1.0',
+          explanation: 'Subtract y-coordinates over x-coordinates between Target $\\alpha$ $(2, 3)$ and Target $\\beta$ $(6, 7)$ to compute $\\Delta y / \\Delta x$.'
         },
         {
           stepNumber: 2,
           label: 'Solve for Y-Intercept (b)',
           mathExpression: 'y = 1(x) + b \\implies 3 = 1(2) + b \\implies b = 1.0',
-          explanation: 'Substitute point (2, 3) and m = 1 into y = mx + b and solve for b.'
+          explanation: 'Substitute point $(2, 3)$ and $m = 1$ into $y = mx + b$ and isolate $b$.'
         },
         {
           stepNumber: 3,
           label: 'Verify with Second Target',
           mathExpression: '7 = 1(6) + 1 = 7 \\quad \\checkmark',
-          explanation: 'Substituting x = 6 confirms the line passes directly through (6, 7).'
+          explanation: 'Substituting $x = 6$ confirms the beam trajectory passes directly through $(6, 7)$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 'm', name: 'Slope', role: 'Controls inclination (rise over run)', currentValueKey: 'm' },
-        { symbol: 'b', name: 'Y-Intercept', role: 'Vertical offset where x = 0', currentValueKey: 'b' },
-        { symbol: 'x', name: 'Input Variable', role: 'Horizontal position along the grid' },
+        { symbol: 'm = \\frac{\\Delta y}{\\Delta x}', name: 'Slope (Rate of Change)', role: 'Ratio of vertical change $\\Delta y$ to horizontal change $\\Delta x$', currentValueKey: 'm' },
+        { symbol: 'b', name: 'Y-Intercept', role: 'Vertical altitude at the origin $x = 0$', currentValueKey: 'b' },
+        { symbol: 'x', name: 'Input Coordinate', role: 'Horizontal position along the coordinate axis' },
         { symbol: 'y', name: 'Output Beam Height', role: 'Vertical altitude of the laser line' }
       ]
     },
@@ -94,32 +94,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'CCSS.MATH.CONTENT.HSG.GPE.B.5',
       standardName: 'Criteria for Perpendicular Lines (Negative Reciprocals)',
       topicCategory: 'Algebra I / Geometry',
-      intuition: 'Two lines are perpendicular if their slopes multiply to -1 (m₁ · m₂ = -1). Rotating a right triangle 90° swaps its rise and run and flips its sign: rise/run becomes -run/rise.',
-      keyFormulaLatex: 'm_2 = -\\frac{1}{m_1} \\iff m_1 \\cdot m_2 = -1',
+      intuition: 'Two lines are perpendicular if and only if their slopes satisfy $m_1 \\cdot m_2 = -1$, meaning $m_2 = -\\frac{1}{m_1}$. Rotating a direction vector by $90^\\circ$ inverts its Delta ratios: $\\frac{\\Delta y}{\\Delta x}$ becomes $-\\frac{\\Delta x}{\\Delta y}$.',
+      keyFormulaLatex: 'm_2 = -\\frac{1}{m_1} = -\\frac{\\Delta x_1}{\\Delta y_1} \\iff m_1 \\cdot m_2 = -1',
       stepByStepSolution: [
         {
           stepNumber: 1,
           label: 'Determine Required Reflected Slope (m₂)',
-          mathExpression: 'm_2 = \\frac{8 - 4}{2 - 4} = \\frac{4}{-2} = -2.0',
-          explanation: 'The reflected beam must travel from Mirror (4, 4) to Target Ω (2, 8).'
+          mathExpression: 'm_2 = \\frac{\\Delta y_2}{\\Delta x_2} = \\frac{8 - 4}{2 - 4} = \\frac{4}{-2} = -2.0',
+          explanation: 'The reflected beam must travel from Deflector Mirror $(4, 4)$ to Target $\\Omega$ $(2, 8)$.'
         },
         {
           stepNumber: 2,
           label: 'Calculate Incoming Emitter Slope (m₁)',
           mathExpression: 'm_1 = -\\frac{1}{m_2} = -\\frac{1}{-2.0} = 0.5',
-          explanation: 'Because the deflector reflects orthogonally, m₁ must be the negative reciprocal of -2.'
+          explanation: 'Because the deflector reflects orthogonally, $m_1$ must be the negative reciprocal of $-2$.'
         },
         {
           stepNumber: 3,
           label: 'Solve for Incoming Intercept (b₁)',
           mathExpression: '4 = 0.5(4) + b_1 \\implies 4 = 2 + b_1 \\implies b_1 = 2.0',
-          explanation: 'Substitute point (4, 4) with m = 0.5 into y = mx + b.'
+          explanation: 'Substitute point $(4, 4)$ with $m = 0.5$ into $y = mx + b$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 'm₁', name: 'Incoming Slope', role: 'Slope of primary beam to mirror', currentValueKey: 'm' },
-        { symbol: 'm₂', name: 'Reflected Slope', role: 'Orthogonal reflected angle: -1/m₁' },
-        { symbol: 'b₁', name: 'Incoming Intercept', role: 'Height at x = 0', currentValueKey: 'b' }
+        { symbol: 'm_1 = \\frac{\\Delta y_1}{\\Delta x_1}', name: 'Incoming Slope', role: 'Slope of primary beam to mirror', currentValueKey: 'm' },
+        { symbol: 'm_2 = -\\frac{1}{m_1}', name: 'Reflected Orthogonal Slope', role: 'Perpendicular reflected trajectory angle' },
+        { symbol: 'b_1', name: 'Incoming Intercept', role: 'Height where incoming beam intercepts $x = 0$', currentValueKey: 'b' }
       ]
     },
     hints: [
@@ -220,31 +220,31 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'CCSS.MATH.CONTENT.HSA.CED.A.3',
       standardName: 'Represent Constraints by Equations and Interpret Solutions',
       topicCategory: 'Algebra I',
-      intuition: 'Three points are collinear if and only if the slope between points 1 and 2 equals the slope between points 2 and 3. This constant derivative is the defining hallmark of all linear functions.',
-      keyFormulaLatex: '\\frac{y_2 - y_1}{x_2 - x_1} = \\frac{y_3 - y_2}{x_3 - x_2} = m',
+      intuition: 'Three points are collinear if and only if the Delta quotient between points 1 and 2 equals that between points 2 and 3: $\\frac{\\Delta y_{12}}{\\Delta x_{12}} = \\frac{\\Delta y_{23}}{\\Delta x_{23}}$. A constant rate of change $\\frac{\\Delta y}{\\Delta x} = m$ is the invariant signature of all linear functions.',
+      keyFormulaLatex: 'm = \\frac{\\Delta y_{12}}{\\Delta x_{12}} = \\frac{\\Delta y_{23}}{\\Delta x_{23}} = \\text{constant}',
       stepByStepSolution: [
         {
           stepNumber: 1,
           label: 'Test Slope between Gate 1 and Gate 2',
-          mathExpression: 'm_{12} = \\frac{3 - (-3)}{1 - (-2)} = \\frac{6}{3} = 2.0',
-          explanation: 'Slope from (-2, -3) to (1, 3) is 2.0.'
+          mathExpression: 'm_{12} = \\frac{\\Delta y_{12}}{\\Delta x_{12}} = \\frac{3 - (-3)}{1 - (-2)} = \\frac{6}{3} = 2.0',
+          explanation: 'Delta ratio from $(-2, -3)$ to $(1, 3)$ is $2.0$.'
         },
         {
           stepNumber: 2,
           label: 'Test Slope between Gate 2 and Gate 3',
-          mathExpression: 'm_{23} = \\frac{9 - 3}{4 - 1} = \\frac{6}{3} = 2.0',
-          explanation: 'Slopes match, proving the three points are strictly collinear.'
+          mathExpression: 'm_{23} = \\frac{\\Delta y_{23}}{\\Delta x_{23}} = \\frac{9 - 3}{4 - 1} = \\frac{6}{3} = 2.0',
+          explanation: 'Both Delta quotients match identically ($m_{12} = m_{23} = 2.0$), proving collinearity.'
         },
         {
           stepNumber: 3,
           label: 'Find the Intercept (b)',
           mathExpression: 'y = 2x + b \\implies 3 = 2(1) + b \\implies b = 1.0',
-          explanation: 'Substituting Gate 2 gives b = 1.0. Equation is y = 2x + 1.'
+          explanation: 'Substituting Gate 2 coordinates yields $b = 1.0$. The beam equation is $y = 2x + 1$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 'm', name: 'Constant Slope', role: 'Rise over run across all gates', currentValueKey: 'm' },
-        { symbol: 'b', name: 'Y-Intercept', role: 'Height at origin x = 0', currentValueKey: 'b' }
+        { symbol: 'm = \\frac{\\Delta y}{\\Delta x}', name: 'Constant Slope', role: 'Invariable rise over run across all three gates', currentValueKey: 'm' },
+        { symbol: 'b', name: 'Y-Intercept', role: 'Height at origin $x = 0$', currentValueKey: 'b' }
       ]
     },
     hints: [
@@ -791,37 +791,37 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'AP Calculus AB: CHA-2 (Limit Definition of Derivative)',
       standardName: 'Instantaneous Rate of Change & Limit of Difference Quotient',
       topicCategory: 'Calculus I',
-      intuition: 'A secant line measures the average rate of change between two separated points. As we slide the second point closer (h → 0), the secant line pivots smoothly into the tangent line—the instantaneous rate of change at a single instant.',
-      keyFormulaLatex: 'f\'(x_0) = \\lim_{h \\to 0} \\frac{f(x_0 + h) - f(x_0)}{h}',
+      intuition: 'A secant line measures the average rate of change $\\frac{\\Delta y}{\\Delta x}$ across an interval $h = \\Delta x$. As the separation shrinks ($\\Delta x \\to 0$), the secant line pivots smoothly into the tangent line—the instantaneous rate of change $f\'(x_0) = \\frac{df}{dx}$ at that single moment.',
+      keyFormulaLatex: 'f\'(x_0) = \\lim_{\\Delta x \\to 0} \\frac{\\Delta y}{\\Delta x} = \\lim_{h \\to 0} \\frac{f(x_0 + h) - f(x_0)}{h}',
       stepByStepSolution: [
         {
           stepNumber: 1,
-          label: 'Evaluate Function at x₀ = 2',
+          label: 'Evaluate Function at Point x₀ = 2',
           mathExpression: 'f(2) = 0.5(2)^2 = 2.0',
-          explanation: 'The point of tangency is (2, 2).'
+          explanation: 'The point of tangency is $(x_0, y_0) = (2, 2)$.'
         },
         {
           stepNumber: 2,
-          label: 'Compute Difference Quotient',
-          mathExpression: '\\frac{0.5(2 + h)^2 - 2}{h} = \\frac{0.5(4 + 4h + h^2) - 2}{h} = \\frac{2h + 0.5h^2}{h} = 2 + 0.5h',
-          explanation: 'Secant slope formula for any separation h.'
+          label: 'Compute Difference Quotient (Delta y / Delta x)',
+          mathExpression: '\\frac{\\Delta y}{\\Delta x} = \\frac{0.5(2 + h)^2 - 2}{h} = \\frac{2h + 0.5h^2}{h} = 2 + 0.5h',
+          explanation: 'Secant slope formula for any finite step increment $h = \\Delta x$.'
         },
         {
           stepNumber: 3,
-          label: 'Take the Limit as h → 0',
+          label: 'Evaluate the Limit as h → 0 (Δx → 0)',
           mathExpression: 'm_{\\text{tan}} = \\lim_{h \\to 0} (2 + 0.5h) = 2.0',
-          explanation: 'Instantaneous slope is exactly 2.0.'
+          explanation: 'The instantaneous derivative $f\'(2) = 2.0$.'
         },
         {
           stepNumber: 4,
           label: 'Write Tangent Line & Verify Target',
-          mathExpression: 'y - 2 = 2(x - 2) \\implies y = 2x - 2. \\quad \\text{At } x = 4: y = 2(4) - 2 = 6.0 \\quad \\checkmark',
-          explanation: 'The true tangent line strikes Target Alpha (4, 6) directly!'
+          mathExpression: 'y - 2 = 2(x - 2) \\implies y = 2x - 2 \\quad [\\text{At } x = 4: y = 2(4) - 2 = 6.0 \\checkmark]',
+          explanation: 'The true tangent blade strikes Target $\\alpha$ $(4, 6)$ directly!'
         }
       ],
       formulaBreakdown: [
-        { symbol: 'h', name: 'Secant Step Size', role: 'Separation between points; shrinks to 0', currentValueKey: 'h' },
-        { symbol: 'f\'(2) = 2', name: 'Derivative', role: 'Slope of tangent line at x = 2' }
+        { symbol: 'h = \\Delta x', name: 'Secant Increment', role: 'Separation interval between points, shrinking toward $0$', currentValueKey: 'h' },
+        { symbol: 'f\'(x_0) = \\frac{df}{dx}', name: 'Instantaneous Derivative', role: 'Slope of tangent line at $x_0 = 2$' }
       ]
     },
     hints: [
@@ -1079,8 +1079,8 @@ export const ALL_LEVELS: LevelDefinition[] = [
         }
       ],
       formulaBreakdown: [
-        { symbol: 'μ', name: 'Projection Ratio', role: '(v₁ · v₂) / ||v₂||²' },
-        { symbol: '⌊μ⌉ = 2', name: 'Nearest Integer', role: 'Integer multiple subtracted to reduce length', currentValueKey: 'q_factor' }
+        { symbol: '\\mu = \\frac{\\langle v_1, v_2 \\rangle}{\\|v_2\\|^2}', name: 'Projection Ratio (\\mu)', role: 'Continuous scalar projection of $v_1$ onto $v_2$' },
+        { symbol: 'q = \\lfloor \\mu \\rceil', name: 'Nearest Integer Quotient', role: 'Integer multiple subtracted to minimize length $\\|v_1\'\\|$', currentValueKey: 'q_factor' }
       ]
     },
     hints: [
@@ -1114,37 +1114,37 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'Discrete Mathematics / Post-Quantum Cryptography: CVP',
       standardName: 'Babai\'s Nearest Plane / Rounding Algorithm',
       topicCategory: 'Lattice Cryptography',
-      intuition: 'In lattice-based decryption, ciphertexts are deliberately perturbed by adding a small noise vector e. Because the authorized recipient possesses the orthogonal basis, they can compute continuous coordinates and simply round them to the nearest integer to eliminate the error.',
+      intuition: 'In lattice cryptography, ciphertexts are perturbed by small noise $e$: $t = Bc + e$. Because the recipient possesses the reduced basis $B$, continuous coordinates $c = B^{-1}t$ can be rounded $\\lfloor c \\rceil$ to eliminate noise $|e| < \\frac{\\lambda_1}{2}$.',
       keyFormulaLatex: 't = B c + e \\implies c = \\lfloor B^{-1} t \\rceil',
       stepByStepSolution: [
         {
           stepNumber: 1,
           label: 'Solve Linear System B c = t',
           mathExpression: '\\begin{bmatrix} 2 & 1 \\\\ 0 & 2 \\end{bmatrix} \\begin{bmatrix} c_1 \\\\ c_2 \\end{bmatrix} = \\begin{bmatrix} 3.2 \\\\ 4.1 \\end{bmatrix}',
-          explanation: 'Set up system without rounding.'
+          explanation: 'Set up continuous coordinate system without rounding.'
         },
         {
           stepNumber: 2,
           label: 'Solve for Continuous c₂ and Round',
           mathExpression: '2 c_2 = 4.1 \\implies c_2 = 2.05 \\implies \\lfloor c_2 \\rceil = 2',
-          explanation: 'c₂ rounds cleanly to 2.'
+          explanation: '$c_2$ rounds cleanly to $2$.'
         },
         {
           stepNumber: 3,
           label: 'Back-Substitute to Solve c₁',
           mathExpression: '2 c_1 + 2 = 3.2 \\implies 2 c_1 = 1.2 \\implies c_1 = 0.6 \\implies \\lfloor c_1 \\rceil = 1',
-          explanation: 'c₁ rounds cleanly to 1.'
+          explanation: '$c_1$ rounds cleanly to $1$.'
         },
         {
           stepNumber: 4,
           label: 'Reconstruct Secret Lattice Point',
-          mathExpression: '1 \\begin{bmatrix} 2 \\\\ 0 \\end{bmatrix} + 2 \\begin{bmatrix} 1 \\\\ 2 \\end{bmatrix} = \\begin{bmatrix} 2 + 2 \\\\ 0 + 4 \\end{bmatrix} = \\begin{bmatrix} 4 \\\\ 4 \\end{bmatrix} \\quad \\checkmark',
-          explanation: 'Target node is precisely [4, 4].'
+          mathExpression: '1 \\begin{bmatrix} 2 \\\\ 0 \\end{bmatrix} + 2 \\begin{bmatrix} 1 \\\\ 2 \\end{bmatrix} = \\begin{bmatrix} 4 \\\\ 4 \\end{bmatrix} \\quad \\checkmark',
+          explanation: 'Target node is precisely $[4, 4]^T$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 't', name: 'Noisy Target', role: 'Intercepted vector [3.2, 4.1] with error e' },
-        { symbol: 'c₁, c₂', name: 'Integer Coordinates', role: 'Lattice linear combination multipliers', currentValueKey: 'c1' }
+        { symbol: 't = B c + e', name: 'Noisy Target Ciphertext', role: 'Continuous vector perturbed by noise $e$' },
+        { symbol: 'c = \\lfloor B^{-1} t \\rceil', name: 'Babai Rounded Coordinates', role: 'Integer linear combination multipliers', currentValueKey: 'c1' }
       ]
     },
     hints: [
@@ -1178,25 +1178,25 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'Post-Quantum Cryptography: Learning With Errors (LWE)',
       standardName: 'Hardness of LWE and Trapdoor Inversion',
       topicCategory: 'Lattice Cryptography',
-      intuition: 'Oded Regev proved that solving noisy linear equations over discrete lattices is as hard as the worst-case shortest vector problem. Decryption works because authorized users hold a private trapdoor that multiplies out the carrier, leaving an error small enough to be rounded to zero.',
-      keyFormulaLatex: 'b = \\langle a, s \\rangle + e \\pmod q, \\quad |e| < \\frac{q}{4}',
+      intuition: 'Oded Regev proved that solving noisy linear equations over discrete lattices is as hard as worst-case lattice problems. In LWE, samples take the form $b = \\sum_{i=1}^n a_i s_i + e \\pmod q$. Decryption works because noise is bounded $|e| \\le \\delta < \\frac{q}{4}$, allowing rounding back to the discrete integer node.',
+      keyFormulaLatex: 'b = \\sum_{i=1}^n a_i s_i + e \\pmod q, \\quad |e| \\le \\delta < \\frac{q}{4}',
       stepByStepSolution: [
         {
           stepNumber: 1,
-          label: 'Evaluate Public Basis Vectors',
-          mathExpression: 'b_1 = [2, 1]^T, \\quad b_2 = [1, 1]^T',
-          explanation: 'Given generator basis.'
+          label: 'Evaluate Public Carrier Inner Product',
+          mathExpression: 'b_1 = [2, 1]^T, \\quad b_2 = [1, 1]^T, \\quad \\sum_{i=1}^2 a_i s_i',
+          explanation: 'Public carrier basis vectors.'
         },
         {
           stepNumber: 2,
-          label: 'Test Secret Coefficients [2, 1]',
+          label: 'Evaluate with Secret Vector [2, 1]',
           mathExpression: '2 \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + 1 \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 4 + 1 \\\\ 2 + 1 \\end{bmatrix} = \\begin{bmatrix} 5 \\\\ 3 \\end{bmatrix}',
-          explanation: 'Reconstructs the true discrete core at (5, 3).'
+          explanation: 'Noise $|e| \\le \\delta$ is safely rounded out to decode $[5, 3]^T$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 's', name: 'Secret Vector', role: 'Private coordinates [2, 1]' },
-        { symbol: 'e', name: 'Gaussian Error', role: 'Bounded perturbance removed by rounding' }
+        { symbol: '\\sum a_i s_i', name: 'Carrier Sum (\\Sigma)', role: 'Sum of carrier samples weighted by secret vector $s$' },
+        { symbol: '|e| \\le \\delta', name: 'Noise Bound (\\delta)', role: 'Gaussian error threshold safely eliminated by quantization' }
       ]
     },
     hints: [
@@ -1230,25 +1230,26 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'NIST FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)',
       standardName: 'Kyber Polynomial Matrix Inversion & Noise Elimination',
       topicCategory: 'Lattice Cryptography',
-      intuition: 'Kyber (ML-KEM) secures modern communication against quantum computers. It operates over modules—vectors of polynomials over finite rings. Decryption computes the inner product of the private vector with the ciphertext and decodes coefficients depending on whether they are closer to 0 or q/2.',
-      keyFormulaLatex: 'm = \\text{Decode}\\left( u - s^T v \\right) \\pmod q',
+      intuition: 'Kyber (ML-KEM) secures modern communication against quantum computers. Decryption computes the inner product $\\sum_{i=1}^k s_i v_i$ of the private vector with the ciphertext and decodes coefficients depending on whether they fall closer to $0$ or $\\frac{q}{2}$.',
+      keyFormulaLatex: 'm = \\text{Decode}\\left( u - \\sum_{i=1}^k s_i v_i \\right) \\pmod q',
       stepByStepSolution: [
         {
           stepNumber: 1,
           label: 'Module Matrix Vector Multiplication',
-          mathExpression: 'v = s_1 \\cdot [2, 1]^T + s_2 \\cdot [1, 1]^T',
+          mathExpression: 'v = s_1 \\cdot [2, 1]^T + s_2 \\cdot [1, 1]^T = \\sum_{i=1}^2 s_i b_i',
           explanation: 'Reconstruct inner product over 2D lattice.'
         },
         {
           stepNumber: 2,
           label: 'Evaluate with Private Key [1, 1]',
           mathExpression: '1 \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + 1 \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 3 \\\\ 2 \\end{bmatrix}',
-          explanation: 'Eliminates error term and yields target key [3, 2].'
+          explanation: 'Eliminates error term and yields target key $[3, 2]^T$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 's', name: 'Private Key', role: 'Secret vector known only to recipient' },
-        { symbol: 'u, v', name: 'Ciphertext', role: 'Encrypted payload carrying message m' }
+        { symbol: 's = [s_1, s_2]', name: 'Private Key Vector', role: 'Secret vector known only to recipient' },
+        { symbol: '\\sum_{i=1}^k s_i v_i', name: 'Module Inner Product (\\Sigma)', role: 'Sum canceling out the public mask' },
+        { symbol: 'u, v', name: 'Ciphertext Payloads', role: 'Encrypted vectors carrying message $m$' }
       ]
     },
     hints: [
