@@ -34,7 +34,6 @@ class SoundEngine {
       this.bgOsc.type = 'sine';
       this.bgOsc.frequency.setValueAtTime(55, this.ctx.currentTime); // Low A
 
-      // Sub-bass modulation filter
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(200, this.ctx.currentTime);
@@ -51,7 +50,31 @@ class SoundEngine {
     }
   }
 
-  public playParry() {
+  public playParry(isCritical: boolean = false) {
+    if (!this.ctx || this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = isCritical ? 'triangle' : 'sine';
+    const startFreq = isCritical ? 1046.50 : 880; // C6 or A5
+    const endFreq = isCritical ? 2093.00 : 1760; // C7 or A6
+
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, now + (isCritical ? 0.25 : 0.15));
+
+    gain.gain.setValueAtTime(isCritical ? 0.4 : 0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + (isCritical ? 0.4 : 0.3));
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + (isCritical ? 0.4 : 0.3));
+  }
+
+  public playComboChime(combo: number) {
     if (!this.ctx || this.isMuted) return;
 
     const now = this.ctx.currentTime;
@@ -59,18 +82,21 @@ class SoundEngine {
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
-    // Frequency chime sweep from 880Hz to 1760Hz
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.15);
+    const baseFreq = 523.25; // C5
+    const pitchShift = Math.min(12, combo) * 100;
+    const freq = baseFreq * Math.pow(2, pitchShift / 1200);
+
+    osc.frequency.setValueAtTime(freq, now);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.15);
 
     gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.3);
+    osc.stop(now + 0.2);
   }
 
   public playLaser() {
@@ -81,11 +107,10 @@ class SoundEngine {
     const gain = this.ctx.createGain();
 
     osc.type = 'sawtooth';
-    // Laser drop sweep 1200Hz -> 100Hz
-    osc.frequency.setValueAtTime(1200, now);
-    osc.frequency.exponentialRampToValueAtTime(100, now + 0.25);
+    osc.frequency.setValueAtTime(1400, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
 
-    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.setValueAtTime(0.25, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.connect(gain);
@@ -105,23 +130,22 @@ class SoundEngine {
     osc.type = 'square';
     osc.frequency.setValueAtTime(440, now);
     osc.frequency.setValueAtTime(880, now + 0.1);
-    osc.frequency.setValueAtTime(440, now + 0.2);
 
     gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.35);
+    osc.stop(now + 0.3);
   }
 
   public playExplosion() {
     if (!this.ctx || this.isMuted) return;
 
     const now = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec white noise
+    const bufferSize = this.ctx.sampleRate * 0.5;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
@@ -134,11 +158,11 @@ class SoundEngine {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, now);
-    filter.frequency.linearRampToValueAtTime(50, now + 0.5);
+    filter.frequency.setValueAtTime(900, now);
+    filter.frequency.linearRampToValueAtTime(40, now + 0.5);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.setValueAtTime(0.45, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
     noise.connect(filter);
@@ -157,16 +181,16 @@ class SoundEngine {
 
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(220, now);
-    osc.frequency.exponentialRampToValueAtTime(660, now + 0.3);
+    osc.frequency.exponentialRampToValueAtTime(780, now + 0.3);
 
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.4);
+    osc.stop(now + 0.35);
   }
 
   public playCoolant() {
@@ -186,11 +210,11 @@ class SoundEngine {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1500, now);
-    filter.frequency.exponentialRampToValueAtTime(300, now + 0.4);
+    filter.frequency.setValueAtTime(1600, now);
+    filter.frequency.exponentialRampToValueAtTime(250, now + 0.4);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.setValueAtTime(0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
 
     noise.connect(filter);

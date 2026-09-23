@@ -1,20 +1,21 @@
 import React, { useRef, useEffect } from 'react';
-import { GameState, Particle, BossProjectile, ParryRing, TargetCore } from '../types/game';
+import { GameState, Particle, BossProjectile, ParryRing, TargetCore, FloatingText } from '../types/game';
 
 interface LatticeCanvasProps {
   gameState: GameState;
   particles: Particle[];
   projectiles: BossProjectile[];
+  floatingTexts: FloatingText[];
   parryRing: ParryRing | null;
   targetCore: TargetCore | null;
   onTargetCoreClick: () => void;
-  onParryTimingCheck?: () => void;
 }
 
 export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
   gameState,
   particles,
   projectiles,
+  floatingTexts,
   parryRing,
   targetCore,
   onTargetCoreClick,
@@ -30,12 +31,21 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
     let animationFrameId: number;
 
     const render = () => {
-      // Handle canvas resolution
+      // Canvas resolution handling
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
+      }
+
+      ctx.save();
+
+      // Screen Shake FX
+      if (gameState.screenShake > 0) {
+        const shakeX = (Math.random() - 0.5) * gameState.screenShake * 3;
+        const shakeY = (Math.random() - 0.5) * gameState.screenShake * 3;
+        ctx.translate(shakeX, shakeY);
       }
 
       const centerX = width / 2;
@@ -45,7 +55,7 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
       ctx.fillStyle = '#020617'; // slate-950
       ctx.fillRect(0, 0, width, height);
 
-      // Draw faint background grid
+      // Faint background grid
       ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = 1;
       const gridSize = 40;
@@ -62,23 +72,23 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
         ctx.stroke();
       }
 
-      // 2. Render Lattice Grid & Shear Angle (Matrix B)
+      // 2. Render Lattice Grid & Vector Shear (Matrix B)
       const skew = gameState.lovaszAngle;
       const entropyRatio = gameState.bossHp / gameState.maxBossHp;
 
       ctx.save();
       ctx.translate(centerX, centerY);
 
-      // Base vector 1: b1
+      // Base vector b1
       const b1x = 120 * Math.cos(skew);
       const b1y = 120 * Math.sin(skew);
 
-      // Base vector 2: b2
+      // Base vector b2
       const b2x = 120 * Math.cos(skew + Math.PI / 2 + (1 - entropyRatio) * 0.5);
       const b2y = 120 * Math.sin(skew + Math.PI / 2 + (1 - entropyRatio) * 0.5);
 
-      // Draw Lattice Grid Points & Connections
-      ctx.strokeStyle = gameState.lovaszThresholdSatisfied ? 'rgba(52, 211, 153, 0.4)' : 'rgba(34, 211, 238, 0.2)';
+      // Draw Lattice Grid Nodes
+      ctx.strokeStyle = gameState.lovaszThresholdSatisfied ? 'rgba(52, 211, 153, 0.5)' : 'rgba(34, 211, 238, 0.25)';
       ctx.lineWidth = 1.5;
 
       const gridRange = 4;
@@ -87,13 +97,11 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
           const px = i * b1x + j * b2x;
           const py = i * b1y + j * b2y;
 
-          // Draw point
           ctx.fillStyle = gameState.lovaszThresholdSatisfied ? '#34d399' : '#22d3ee';
           ctx.beginPath();
-          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
           ctx.fill();
 
-          // Connect neighboring lattice nodes
           if (i < gridRange) {
             const nextPx = (i + 1) * b1x + j * b2x;
             const nextPy = (i + 1) * b1y + j * b2y;
@@ -113,14 +121,33 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
         }
       }
 
+      // Draw primary basis vectors b1 and b2 with arrows & labels
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(b1x, b1y);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(b2x, b2y);
+      ctx.stroke();
+
+      // Vector labels
+      ctx.font = 'bold 12px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#22d3ee';
+      ctx.fillText('b₁ (Basis 1)', b1x + 8, b1y);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText('b₂ (Basis 2)', b2x + 8, b2y);
+
       // 3. Gram-Schmidt Orthogonalization Visor (b_i^*)
       if (gameState.gramSchmidtVisor) {
-        // Gram-Schmidt orthogonal projection plane lines
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.6)'; // amber-400
+        ctx.strokeStyle = '#34d399';
         ctx.setLineDash([6, 6]);
         ctx.lineWidth = 2;
 
-        // Orthogonal projection to b1
         const projLength = 180;
         const perpX = -b1y / Math.hypot(b1x, b1y) * projLength;
         const perpY = b1x / Math.hypot(b1x, b1y) * projLength;
@@ -132,17 +159,14 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
 
         ctx.setLineDash([]); // reset
 
-        // Label GS planes
-        ctx.fillStyle = '#fbbf24';
-        ctx.font = '12px "JetBrains Mono", monospace';
-        ctx.fillText('b₁*', perpX + 10, perpY);
-        ctx.fillText('b₂*', -perpX - 25, -perpY);
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.fillText('b₁* (Orthogonal Projection Plane)', perpX + 10, perpY);
       }
 
       // 4. Boss Core ("Kyber, the Module Leviathan")
       const bossRadius = 50 + entropyRatio * 20;
 
-      // Outer noise ring
       ctx.strokeStyle = gameState.bossPhase === 4 ? '#f43f5e' : (gameState.bossPhase === 2 ? '#fbbf24' : '#22d3ee');
       ctx.lineWidth = 3;
       ctx.shadowBlur = 20;
@@ -153,7 +177,7 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
       ctx.stroke();
       ctx.shadowBlur = 0; // reset
 
-      // Rotating inner polygon (Module Leviathan Emblem)
+      // Rotating inner polygon
       ctx.save();
       const time = Date.now() * 0.002;
       ctx.rotate(time);
@@ -172,18 +196,17 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
       ctx.stroke();
       ctx.restore();
 
-      // Boss Label & Entropy Status
+      // Boss Label & Entropy
       ctx.fillStyle = '#f8fafc';
       ctx.font = 'bold 14px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('KYBER LEVIATHAN', 0, -bossRadius - 15);
-      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText('KYBER LEVIATHAN', 0, -bossRadius - 18);
+      ctx.font = '11px "JetBrains Mono", monospace';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText(`ENTROPY: ${Math.round(gameState.bossHp)} / ${gameState.maxBossHp} dim`, 0, -bossRadius - 3);
+      ctx.fillText(`ENTROPY: ${Math.round(gameState.bossHp)} / ${gameState.maxBossHp} dim`, 0, -bossRadius - 4);
 
-      // Phase 1: Kannan's Anchor visualization
+      // Phase 1: Kannan's Anchor Orbiting Vectors
       if (gameState.bossPhase === 1) {
-        // Orbiting noisy vectors t = As + e
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
         ctx.lineWidth = 1.5;
         const numNoise = 8;
@@ -200,35 +223,56 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
 
           ctx.fillStyle = '#fbbf24';
           ctx.beginPath();
-          ctx.arc(nx, ny, 3, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 3.5, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // Phase 2: LLL Parry Ring
-      if (parryRing && parryRing.active) {
-        ctx.strokeStyle = gameState.lovaszThresholdSatisfied ? '#34d399' : '#38bdf8';
-        ctx.lineWidth = gameState.lovaszThresholdSatisfied ? 4 : 2;
+      // Phase 2: LLL Parry Ring + NOVICE TIMING ZONE
+      if (parryRing && parryRing.active && gameState.bossPhase === 2) {
+        const targetRadius = 70; // Sweet spot radius
+
+        // Render stationary target zone (Green Circle)
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.4)';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(0, 0, targetRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]); // reset
+
+        // Shrinking timing ring
+        const isOverlap = Math.abs(parryRing.radius - targetRadius) < 18 || gameState.lovaszThresholdSatisfied;
+
+        ctx.strokeStyle = isOverlap ? '#34d399' : '#38bdf8';
+        ctx.lineWidth = isOverlap ? 4 : 2;
+        ctx.shadowBlur = isOverlap ? 20 : 0;
+        ctx.shadowColor = '#34d399';
+
         ctx.beginPath();
         ctx.arc(0, 0, parryRing.radius, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // Lovász condition indicator ring
-        if (gameState.lovaszThresholdSatisfied) {
-          ctx.fillStyle = 'rgba(52, 211, 153, 0.2)';
+        if (isOverlap) {
+          ctx.fillStyle = 'rgba(52, 211, 153, 0.15)';
           ctx.beginPath();
-          ctx.arc(0, 0, parryRing.radius, 0, Math.PI * 2);
+          ctx.arc(0, 0, targetRadius, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = '#34d399';
-          ctx.font = 'bold 12px "JetBrains Mono", monospace';
-          ctx.fillText('PARRY READY! (δ = 0.75)', 0, parryRing.radius + 20);
+          ctx.font = 'bold 13px "JetBrains Mono", monospace';
+          ctx.fillText('⚡ PRESS [2] PARRY NOW! (δ = 0.75)', 0, targetRadius + 30);
+        } else {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '10px "JetBrains Mono", monospace';
+          ctx.fillText('PARRY ZONE (Match Green Ring)', 0, targetRadius + 20);
         }
       }
 
       ctx.restore(); // restore center translation
 
-      // 5. Phase 4: uSVP anomalous vector blinking target core
+      // 5. Phase 4: uSVP Core Target Vector
       if (gameState.bossPhase === 4 && targetCore && targetCore.active) {
         const tcX = centerX + targetCore.x;
         const tcY = centerY + targetCore.y;
@@ -236,7 +280,6 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
         const pulseScale = 1 + Math.sin(targetCore.pulseTimer * 10) * 0.2;
         const reticleRadius = 25 * pulseScale;
 
-        // Glowing anomalous vector reticle
         ctx.strokeStyle = '#f43f5e';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 25;
@@ -256,11 +299,10 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
 
         ctx.shadowBlur = 0; // reset
 
-        // Target Label
         ctx.fillStyle = '#f43f5e';
         ctx.font = 'bold 12px "JetBrains Mono", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('CLICK TO DE-ENCAPSULATE uSVP', tcX, tcY - reticleRadius - 15);
+        ctx.fillText('🎯 CLICK ANOMALOUS VECTOR TO DE-ENCAPSULATE!', tcX, tcY - reticleRadius - 15);
       }
 
       // 6. Boss Projectiles
@@ -285,16 +327,26 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
         ctx.globalAlpha = 1.0;
       });
 
-      // 8. Memory Heat Screen Vignette / Warning
-      if (gameState.memoryHeat > 80) {
-        ctx.fillStyle = `rgba(244, 63, 94, ${(gameState.memoryHeat - 80) * 0.015})`;
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.fillStyle = '#f43f5e';
-        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+      // 8. Floating Text Popups (Damage Numbers & Visual Feedback)
+      floatingTexts.forEach((ft) => {
+        const alpha = Math.max(0, ft.life / ft.maxLife);
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = alpha;
+        ctx.font = `bold ${ft.fontSize}px "JetBrains Mono", monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText('CRITICAL OVERHEAT WARNING: SIEVE MEMORY BREACH', centerX, 40);
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.globalAlpha = 1.0;
+      });
+
+      // 9. Combo Display on Top Right of Canvas
+      if (gameState.comboCount > 1) {
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`🔥 ${gameState.comboCount}x COMBO MULTIPLIER`, width - 20, 30);
       }
+
+      ctx.restore(); // restore screen shake translation
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -304,7 +356,7 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [gameState, particles, projectiles, parryRing, targetCore]);
+  }, [gameState, particles, projectiles, floatingTexts, parryRing, targetCore]);
 
   // Handle canvas click for Phase 4 core strike
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -319,7 +371,7 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
     const tcY = centerY + targetCore.y;
 
     const dist = Math.hypot(clickX - tcX, clickY - tcY);
-    if (dist <= 40) {
+    if (dist <= 45) {
       onTargetCoreClick();
     }
   };

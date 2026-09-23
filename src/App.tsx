@@ -9,6 +9,7 @@ import {
   BossProjectile,
   ParryRing,
   TargetCore,
+  FloatingText,
   WeaponId,
 } from './types/game';
 import { soundEngine } from './utils/audio';
@@ -24,6 +25,7 @@ const BOSS_PHASES: Record<number, BossPhase> = {
     subtitle: "Lattice Primal Binding (100% - 75% HP)",
     minHpPercent: 75,
     description: "Leviathan hovers in noisy space (t = As + e). Deploy Kannan's Anchor to bind the target vector.",
+    tacticalTip: "Phase 1: Press [1] for Anchor Lock to pin down noisy lattice vectors into the grid!",
   },
   2: {
     id: 2,
@@ -31,6 +33,7 @@ const BOSS_PHASES: Record<number, BossPhase> = {
     subtitle: "Lovász Basis Reduction (75% - 40% HP)",
     minHpPercent: 40,
     description: "Boss sweeps skewed basis vectors. Time LLL Shears when vectors align (δ = 0.75).",
+    tacticalTip: "Phase 2: Wait until the shrinking blue ring enters the GREEN target circle, then press [2] to PARRY!",
   },
   3: {
     id: 3,
@@ -38,6 +41,7 @@ const BOSS_PHASES: Record<number, BossPhase> = {
     subtitle: "Block Reduction & Memory Heat (40% - 10% HP)",
     minHpPercent: 10,
     description: "Dial Block Size (β) from 20 to 120. Higher β deals massive damage but builds Memory Heat (2^0.292β ops).",
+    tacticalTip: "Phase 3: Adjust Block Size β slider for massive damage! Press [5] Coolant before Heat reaches 100%!",
   },
   4: {
     id: 4,
@@ -45,6 +49,7 @@ const BOSS_PHASES: Record<number, BossPhase> = {
     subtitle: "De-encapsulation Final Strike (10% - 0% HP)",
     minHpPercent: 0,
     description: "Noise separates from Gaussian background. Click the anomalous vector on canvas to de-encapsulate!",
+    tacticalTip: "Phase 4: FINAL STRIKE! Find the red target crosshair on the canvas and CLICK IT to win!",
   },
 };
 
@@ -52,45 +57,55 @@ const INITIAL_WEAPONS: Weapon[] = [
   {
     id: 'kannan',
     name: "Kannan's Anchor",
+    simpleName: 'Anchor Lock',
     cooldown: 4.0,
     currentCooldown: 0,
     description: "Locks target vector into primal lattice coordinates.",
+    simpleGuide: "Locks noisy targets to the origin. Extra damage in Phase 1!",
     shortcut: '1',
     iconName: 'anchor',
   },
   {
     id: 'lll',
     name: 'LLL Shearing Blades',
+    simpleName: 'Parry Blade',
     cooldown: 1.2,
     currentCooldown: 0,
     description: "Size-reduces basis vectors. Bonus damage when timed with Lovász threshold (δ=0.75).",
+    simpleGuide: "Time this with the green ring for CRITICAL PARRY damage!",
     shortcut: '2',
     iconName: 'scissors',
   },
   {
     id: 'bkz',
     name: 'BKZ Siege Cannon',
+    simpleName: 'Power Cannon',
     cooldown: 0.5,
     currentCooldown: 0,
     description: "Deals heavy damage scaling with Block Size β. Fills Memory Heat buffer.",
+    simpleGuide: "Fires heavy blast scaled by β slider. Watch out for Heat!",
     shortcut: '3',
     iconName: 'flame',
   },
   {
     id: 'visor',
     name: 'Gram-Schmidt Visor',
+    simpleName: 'Grid Visor',
     cooldown: 0.0,
     currentCooldown: 0,
     description: "Toggles orthogonal projection planes (b_i*) on canvas.",
+    simpleGuide: "Toggles 90° reference grid lines to reveal hidden alignment.",
     shortcut: '4',
     iconName: 'eye',
   },
   {
     id: 'coolant',
     name: 'Sieve Coolant',
+    simpleName: 'Heat Coolant',
     cooldown: 6.0,
     currentCooldown: 0,
     description: "Flushes Sieve Memory Heat buffer by 40%.",
+    simpleGuide: "Flushes 40% processing heat to prevent emergency crash.",
     shortcut: '5',
     iconName: 'wind',
   },
@@ -106,6 +121,9 @@ export function App() {
     memoryHeat: 0,
     bkzBeta: 40,
     gramSchmidtVisor: false,
+    comboCount: 0,
+    screenShake: 0,
+    tacticalHint: BOSS_PHASES[1].tacticalTip,
     lovaszAngle: 0,
     lovaszThresholdSatisfied: false,
     isGameOver: false,
@@ -118,11 +136,12 @@ export function App() {
   const [weapons, setWeapons] = useState<Weapon[]>(INITIAL_WEAPONS);
   const [logs, setLogs] = useState<CombatLogEntry[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [projectiles, setProjectiles] = useState<BossProjectile[]>([]);
   const [parryRing, setParryRing] = useState<ParryRing | null>({
     id: 'ring-1',
     radius: 180,
-    targetRadius: 40,
+    targetRadius: 70,
     speed: 1.5,
     active: true,
     angle: 0,
@@ -130,30 +149,34 @@ export function App() {
 
   const [targetCore, setTargetCore] = useState<TargetCore | null>(null);
 
-  // Helper log function
-  const addLog = useCallback((text: string, type: CombatLogEntry['type'] = 'info') => {
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    setLogs((prev) => [
-      ...prev.slice(-40), // keep last 40 logs
-      {
-        id: Math.random().toString(),
-        timestamp,
-        text,
-        type,
-      },
-    ]);
-  }, []);
+  // Helper log function with beginner translation
+  const addLog = useCallback(
+    (text: string, type: CombatLogEntry['type'] = 'info', simpleTranslation?: string) => {
+      const timestamp = new Date().toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setLogs((prev) => [
+        ...prev.slice(-40),
+        {
+          id: Math.random().toString(),
+          timestamp,
+          text,
+          simpleTranslation,
+          type,
+        },
+      ]);
+    },
+    []
+  );
 
   // Initial welcome log
   useEffect(() => {
-    addLog("MODULE LEVIATHAN DETECTED: KYBER-768 INITIALIZED", "warning");
-    addLog("ENGAGING LATTICE-BASED CRYPTANALYSIS PROTOCOL", "info");
-    addLog("Phase 1 Active: Kannan's Embedding (t = As + e). Deploy Anchor!", "phase_change");
+    addLog("MODULE LEVIATHAN DETECTED: KYBER-768 INITIALIZED", "warning", "Boss encounter started! Kyber-768 protection active.");
+    addLog("ENGAGING LATTICE-BASED CRYPTANALYSIS PROTOCOL", "info", "Goal: Un-skew the grid and find the shortest vector to de-encapsulate!");
+    addLog("Phase 1 Active: Kannan's Embedding (t = As + e). Deploy Anchor!", "phase_change", "Use Anchor Lock [1] to bind noisy target vectors to grid origin!");
   }, [addLog]);
 
   // Audio setup on user interaction
@@ -163,6 +186,23 @@ export function App() {
       setGameState((prev) => ({ ...prev, audioInitialized: true }));
     }
   }, [gameState.audioInitialized]);
+
+  // Floating text spawn helper
+  const spawnFloatingText = (text: string, x: number, y: number, color: string = '#34d399', fontSize: number = 18) => {
+    setFloatingTexts((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(),
+        text,
+        x,
+        y,
+        color,
+        life: 30,
+        maxLife: 30,
+        fontSize,
+      },
+    ]);
+  };
 
   // Particle generator helper
   const spawnParticles = (x: number, y: number, color: string, count: number = 15) => {
@@ -185,7 +225,7 @@ export function App() {
     setParticles((prev) => [...prev, ...newParticles]);
   };
 
-  // Main game tick loop (50ms ~ 20 updates per sec for physics/game rules)
+  // Main game tick loop
   const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
     if (gameState.isGameOver || gameState.isVictory) return;
@@ -195,7 +235,7 @@ export function App() {
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
 
-      // 1. Decrement Cooldowns
+      // Decrement Cooldowns
       setWeapons((prev) =>
         prev.map((w) => ({
           ...w,
@@ -203,32 +243,38 @@ export function App() {
         }))
       );
 
-      // 2. Skew Angle & Lovász Threshold calculation
+      // Game state updates & Skew calculations
       setGameState((prev) => {
         const newAngle = (prev.lovaszAngle + dt * 1.8) % (Math.PI * 2);
-        // Lovász condition satisfied when angle aligns with sweet spot near ~0.75 rad (or multiples)
+
+        // Lovász condition satisfied when angle aligns near sweet spot (~0.75 rad)
         const angleMod = Math.abs(Math.sin(newAngle * 2));
         const thresholdMet = angleMod > 0.85;
 
-        // Check phase transitions based on HP ratio
+        // Phase transitions
         const hpPercent = (prev.bossHp / prev.maxBossHp) * 100;
         let newPhase = prev.bossPhase;
+        let hint = prev.tacticalHint;
 
         if (hpPercent <= 10 && prev.bossPhase < 4) {
           newPhase = 4;
-          addLog("PHASE 4: uSVP CORE STRIKE! Target vector exposed!", "critical");
+          hint = BOSS_PHASES[4].tacticalTip;
+          addLog("PHASE 4: uSVP CORE STRIKE! Target vector exposed!", "critical", "Click the blinking target on canvas!");
           soundEngine.playAlarm();
         } else if (hpPercent <= 40 && hpPercent > 10 && prev.bossPhase < 3) {
           newPhase = 3;
-          addLog("PHASE 3: BKZ BATTERY & SIEVING ENGAGED! Adjust Block Size β!", "phase_change");
+          hint = BOSS_PHASES[3].tacticalTip;
+          addLog("PHASE 3: BKZ BATTERY & SIEVING ENGAGED! Adjust Block Size β!", "phase_change", "Dial β slider for massive damage! Watch heat!");
           soundEngine.playAlarm();
         } else if (hpPercent <= 75 && hpPercent > 40 && prev.bossPhase < 2) {
           newPhase = 2;
-          addLog("PHASE 2: LLL PARRY DANCE! Time shears with Lovász condition (δ=0.75).", "phase_change");
+          hint = BOSS_PHASES[2].tacticalTip;
+          addLog("PHASE 2: LLL PARRY DANCE! Time shears with Lovász condition (δ=0.75).", "phase_change", "Wait for shrinking ring to enter green circle, then press [2]!");
           soundEngine.playAlarm();
         }
 
-        // Passive memory heat decay
+        // Decay screen shake & memory heat
+        const newShake = Math.max(0, prev.screenShake - dt * 8);
         const newHeat = Math.max(0, prev.memoryHeat - dt * 3);
 
         return {
@@ -236,11 +282,13 @@ export function App() {
           lovaszAngle: newAngle,
           lovaszThresholdSatisfied: thresholdMet,
           bossPhase: newPhase,
+          tacticalHint: hint,
+          screenShake: newShake,
           memoryHeat: newHeat,
         };
       });
 
-      // 3. Update Parry Ring for Phase 2
+      // Update Parry Ring for Phase 2
       setParryRing((prev) => {
         if (!prev) return null;
         let newRadius = prev.radius - prev.speed * 2.5;
@@ -253,7 +301,7 @@ export function App() {
         };
       });
 
-      // 4. Update Phase 4 Core target vector positioning
+      // Update Phase 4 Core target vector positioning
       if (gameState.bossPhase === 4) {
         setTargetCore((prev) => {
           if (!prev) {
@@ -271,7 +319,7 @@ export function App() {
         });
       }
 
-      // 5. Boss Attack Spawner
+      // Boss Attack Spawner
       if (Math.random() < 0.04) {
         const attackType = Math.random() > 0.5 ? 'binomial' : 'modular_shear';
         const color = attackType === 'binomial' ? '#f43f5e' : '#fbbf24';
@@ -294,7 +342,7 @@ export function App() {
         ]);
       }
 
-      // 6. Projectile movement & collision with player shield
+      // Projectile movement & collision with player shield
       setProjectiles((prev) => {
         const updated: BossProjectile[] = [];
         prev.forEach((p) => {
@@ -307,13 +355,15 @@ export function App() {
             setGameState((state) => {
               const nextHp = state.playerHp - p.damage;
               if (nextHp <= 0) {
-                addLog("CRITICAL FAILURE: SYSTEM INTEGRITY DESTROYED BY LATTICE NOISE", "critical");
+                addLog("CRITICAL FAILURE: SYSTEM INTEGRITY DESTROYED BY LATTICE NOISE", "critical", "Player integrity depleted! Restart to try again.");
                 soundEngine.playExplosion();
-                return { ...state, playerHp: 0, isGameOver: true };
+                return { ...state, playerHp: 0, isGameOver: true, comboCount: 0 };
               }
-              return { ...state, playerHp: nextHp };
+              return { ...state, playerHp: nextHp, screenShake: 3, comboCount: 0 };
             });
-            addLog(`Shield Impact! ${p.type.toUpperCase()} dealt ${p.damage} damage.`, "boss_attack");
+
+            spawnFloatingText(`-${p.damage} HP`, p.x, p.y, '#f43f5e', 16);
+            addLog(`Shield Impact! ${p.type.toUpperCase()} dealt ${p.damage} damage.`, "boss_attack", `Boss noise hit your shield! (-${p.damage} HP, Combo reset)`);
             soundEngine.playAlarm();
           } else {
             updated.push({
@@ -326,7 +376,7 @@ export function App() {
         return updated;
       });
 
-      // 7. Particle physics
+      // Update Particle physics
       setParticles((prev) =>
         prev
           .map((p) => ({
@@ -336,6 +386,17 @@ export function App() {
             life: p.life - 1,
           }))
           .filter((p) => p.life > 0)
+      );
+
+      // Update Floating Text life
+      setFloatingTexts((prev) =>
+        prev
+          .map((ft) => ({
+            ...ft,
+            y: ft.y - 0.8,
+            life: ft.life - 1,
+          }))
+          .filter((ft) => ft.life > 0)
       );
 
     }, 50);
@@ -352,43 +413,85 @@ export function App() {
     const weapon = weapons.find((w) => w.id === weaponId);
     if (!weapon || weapon.currentCooldown > 0) return;
 
-    // Trigger specific weapon mechanics
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2 - 40;
+
     switch (weaponId) {
       case 'kannan': {
         soundEngine.playAnchor();
-        const damage = gameState.bossPhase === 1 ? 95 : 35;
+        const baseDamage = gameState.bossPhase === 1 ? 95 : 35;
+        const comboBonus = gameState.comboCount * 10;
+        const totalDamage = baseDamage + comboBonus;
+
         setGameState((prev) => {
-          const nextHp = Math.max(0, prev.bossHp - damage);
-          return { ...prev, bossHp: nextHp };
+          const nextHp = Math.max(0, prev.bossHp - totalDamage);
+          const nextCombo = prev.comboCount + 1;
+          return { ...prev, bossHp: nextHp, comboCount: nextCombo, screenShake: 2 };
         });
-        spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#22d3ee', 25);
-        addLog(`Kannan's Anchor Deployed: Bound target vector t to origin. Dealt ${damage} damage.`, "player_action");
-        addLog("Mathematical proof: Implemented primal embedding matrix [[A, t], [0, q]]", "info");
+
+        spawnParticles(centerX, centerY, '#22d3ee', 25);
+        spawnFloatingText(`ANCHOR LOCKED! -${totalDamage} DIM`, centerX, centerY, '#22d3ee', 20);
+
+        addLog(
+          `Kannan's Anchor Deployed: Bound target vector t to origin. Dealt ${totalDamage} damage.`,
+          "player_action",
+          `Anchor Lock pinned noisy target vector! (-${totalDamage} Lattice Entropy)`
+        );
         break;
       }
       case 'lll': {
-        const isParryTimed = gameState.lovaszThresholdSatisfied;
-        soundEngine.playParry();
-
-        const damage = isParryTimed ? 80 : 30;
-        setGameState((prev) => {
-          const nextHp = Math.max(0, prev.bossHp - damage);
-          return { ...prev, bossHp: nextHp };
-        });
-        spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#34d399', isParryTimed ? 35 : 15);
+        // Check timing with parry target ring zone
+        const targetRadius = 70;
+        const currentRingRadius = parryRing ? parryRing.radius : 180;
+        const isParryTimed = Math.abs(currentRingRadius - targetRadius) < 18 || gameState.lovaszThresholdSatisfied;
 
         if (isParryTimed) {
-          addLog(`CRITICAL LLL PARRY! Lovász condition satisfied (δ = 0.75). Size reduction dealt ${damage} damage!`, "critical");
-          addLog("Gram-Schmidt length bound achieved: ||b1|| <= 2^((n-1)/4) * det(L)^(1/n)", "info");
+          const nextCombo = gameState.comboCount + 1;
+          soundEngine.playParry(true);
+          soundEngine.playComboChime(nextCombo);
+
+          const totalDamage = 110 + nextCombo * 15;
+
+          setGameState((prev) => ({
+            ...prev,
+            bossHp: Math.max(0, prev.bossHp - totalDamage),
+            comboCount: nextCombo,
+            screenShake: 4,
+          }));
+
+          spawnParticles(centerX, centerY, '#34d399', 40);
+          spawnFloatingText(`⚡ PERFECT PARRY! -${totalDamage} DIM`, centerX, centerY, '#34d399', 22);
+
+          addLog(
+            `CRITICAL LLL PARRY! Lovász condition satisfied (δ = 0.75). Size reduction dealt ${totalDamage} damage!`,
+            "critical",
+            `PERFECT PARRY! Un-skewed distorted basis vectors! (-${totalDamage} Entropy, ${nextCombo}x Combo)`
+          );
         } else {
-          addLog(`LLL Shearing Blade used. Basis vector reduced by ${damage} damage.`, "player_action");
+          soundEngine.playParry(false);
+          const damage = 35;
+
+          setGameState((prev) => ({
+            ...prev,
+            bossHp: Math.max(0, prev.bossHp - damage),
+            comboCount: 0,
+          }));
+
+          spawnParticles(centerX, centerY, '#38bdf8', 15);
+          spawnFloatingText(`PARRY SLICE -${damage} DIM`, centerX, centerY, '#38bdf8', 16);
+
+          addLog(
+            `LLL Shearing Blade used. Basis vector reduced by ${damage} damage.`,
+            "player_action",
+            `Parry Blade sliced basis vector. Tip: Time it inside the green circle for critical damage!`
+          );
         }
         break;
       }
       case 'bkz': {
         soundEngine.playLaser();
         const beta = gameState.bkzBeta;
-        const damage = Math.round(beta * 1.25);
+        const damage = Math.round(beta * 1.3);
         const heatCost = Math.round(beta * 0.45);
 
         setGameState((prev) => {
@@ -397,12 +500,19 @@ export function App() {
 
           if (nextHeat >= 100) {
             soundEngine.playExplosion();
-            addLog(`EMERGENCY CRASH: Sieve Memory Overheated (2^(0.292*${beta}) ops breached buffer)!`, "critical");
+            spawnFloatingText(`🔥 OVERHEAT CRASH! -25 HP`, centerX, centerY, '#f43f5e', 22);
+            addLog(
+              `EMERGENCY CRASH: Sieve Memory Overheated (2^(0.292*${beta}) ops breached buffer)!`,
+              "critical",
+              `Power Cannon overheated! Sieve buffer crashed. (-25 System Health)`
+            );
             return {
               ...prev,
               bossHp: nextHp,
               memoryHeat: 100,
               playerHp: Math.max(0, prev.playerHp - 25),
+              screenShake: 6,
+              comboCount: 0,
               overheated: true,
             };
           }
@@ -411,27 +521,42 @@ export function App() {
             ...prev,
             bossHp: nextHp,
             memoryHeat: nextHeat,
+            screenShake: 3,
           };
         });
 
-        spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
-        addLog(`BKZ Siege Cannon Fired (Block Size β=${beta}): Dealt ${damage} damage. (+${heatCost}% Heat)`, "player_action");
-        addLog(`Sieving Complexity: 2^(0.292 * ${beta}) operations calculated.`, "info");
+        spawnParticles(centerX, centerY, '#fbbf24', 30);
+        spawnFloatingText(`BKZ BLAST! -${damage} DIM (+${heatCost}% Heat)`, centerX, centerY, '#fbbf24', 18);
+
+        addLog(
+          `BKZ Siege Cannon Fired (Block Size β=${beta}): Dealt ${damage} damage. (+${heatCost}% Heat)`,
+          "player_action",
+          `Power Cannon fired at block size β=${beta}! (-${damage} Entropy, +${heatCost}% Heat)`
+        );
         break;
       }
       case 'visor': {
         setGameState((prev) => {
           const nextVisor = !prev.gramSchmidtVisor;
-          addLog(`Gram-Schmidt Orthogonalization Visor: ${nextVisor ? 'ENABLED (b_i* planes visible)' : 'DISABLED'}`, "info");
+          addLog(
+            `Gram-Schmidt Orthogonalization Visor: ${nextVisor ? 'ENABLED (b_i* planes visible)' : 'DISABLED'}`,
+            "info",
+            `Grid Visor ${nextVisor ? 'ON' : 'OFF'}: 90° reference lines showing vector orthogonality.`
+          );
           return { ...prev, gramSchmidtVisor: nextVisor };
         });
-        return; // Visor does not put on cooldown
+        return;
       }
       case 'coolant': {
         soundEngine.playCoolant();
         setGameState((prev) => {
           const nextHeat = Math.max(0, prev.memoryHeat - 40);
-          addLog(`Sieve Coolant Flushed: Memory Heat buffer reduced by 40% (Current: ${Math.round(nextHeat)}%)`, "player_action");
+          spawnFloatingText(`❄️ COOLANT FLUSH! -40% HEAT`, centerX, centerY, '#38bdf8', 18);
+          addLog(
+            `Sieve Coolant Flushed: Memory Heat buffer reduced by 40% (Current: ${Math.round(nextHeat)}%)`,
+            "player_action",
+            `Heat Coolant flushed processing buffer! (-40% Memory Heat)`
+          );
           return { ...prev, memoryHeat: nextHeat, overheated: false };
         });
         break;
@@ -448,21 +573,25 @@ export function App() {
   const handleTargetCoreClick = () => {
     initAudioCtx();
     soundEngine.playExplosion();
-    spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#f43f5e', 80);
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    spawnParticles(centerX, centerY, '#f43f5e', 90);
+    spawnFloatingText(`🎯 DE-ENCAPSULATED! VICTORY!`, centerX, centerY, '#34d399', 24);
 
     setGameState((prev) => ({
       ...prev,
       bossHp: 0,
       isVictory: true,
+      screenShake: 8,
     }));
 
-    addLog("DE-ENCAPSULATION SUCCESSFUL! UNBALANCED SVP SOLVED!", "critical");
-    addLog("KYBER-768 MODULE LEVIATHAN DEFEATED!", "phase_change");
+    addLog("DE-ENCAPSULATION SUCCESSFUL! UNBALANCED SVP SOLVED!", "critical", "VICTORY! Shared secret error vector isolated!");
+    addLog("KYBER-768 MODULE LEVIATHAN DEFEATED!", "phase_change", "ML-KEM-768 lattice reduction complete!");
 
-    // Launch celebratory confetti
     confetti({
-      particleCount: 150,
-      spread: 90,
+      particleCount: 180,
+      spread: 100,
       origin: { y: 0.6 },
     });
   };
@@ -504,6 +633,9 @@ export function App() {
       memoryHeat: 0,
       bkzBeta: 40,
       gramSchmidtVisor: false,
+      comboCount: 0,
+      screenShake: 0,
+      tacticalHint: BOSS_PHASES[1].tacticalTip,
       lovaszAngle: 0,
       lovaszThresholdSatisfied: false,
       isGameOver: false,
@@ -514,13 +646,14 @@ export function App() {
     });
     setWeapons(INITIAL_WEAPONS);
     setLogs([]);
-    addLog("SYSTEM REBOOT: RE-INITIALIZING KYBER-768 ENGAGEMENT", "warning");
+    setFloatingTexts([]);
+    addLog("SYSTEM REBOOT: RE-INITIALIZING KYBER-768 ENGAGEMENT", "warning", "Game reset. Ready to engage!");
   };
 
   return (
     <div
       onClick={initAudioCtx}
-      className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 p-3 gap-3 scanline select-none overflow-hidden"
+      className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 p-3 gap-2 scanline select-none overflow-hidden"
     >
       {/* Header */}
       <header className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-lg px-4 py-2 backdrop-blur shadow-lg">
@@ -530,7 +663,7 @@ export function App() {
             KYBER: <span className="text-cyan-400">THE MODULE LEVIATHAN</span>
           </h1>
           <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400 font-mono">
-            ML-KEM-768 Cryptanalysis Simulator
+            ML-KEM-768 Post-Quantum Cryptanalysis
           </span>
         </div>
 
@@ -543,20 +676,21 @@ export function App() {
       </header>
 
       {/* Main Game Arena Layout */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-3 min-h-0">
-        {/* Canvas Engine Column (3/4 width on desktop) */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2.5 min-h-0">
+        {/* Canvas Engine Column */}
         <div className="lg:col-span-3 flex flex-col min-h-0">
           <LatticeCanvas
             gameState={gameState}
             particles={particles}
             projectiles={projectiles}
+            floatingTexts={floatingTexts}
             parryRing={parryRing}
             targetCore={targetCore}
             onTargetCoreClick={handleTargetCoreClick}
           />
         </div>
 
-        {/* Streaming Combat Log Column (1/4 width on desktop) */}
+        {/* Dual-Format Streaming Combat Log Column */}
         <div className="lg:col-span-1 flex flex-col min-h-0">
           <CombatLog logs={logs} />
         </div>
@@ -589,13 +723,13 @@ export function App() {
               DE-ENCAPSULATION SUCCESSFUL!
             </h2>
             <p className="text-slate-300 text-xs font-mono leading-relaxed">
-              You have successfully reduced the Kyber-768 module lattice, isolated the secret error vector via uSVP core strike, and de-encapsulated the shared key.
+              Congratulations! You reduced the 768-dimensional lattice, un-skewed the basis vectors via LLL parrying, and isolated the secret error vector in uSVP.
             </p>
 
             <div className="bg-slate-950 p-3 rounded border border-slate-800 text-left text-[11px] font-mono text-slate-400 space-y-1">
               <div className="flex justify-between">
-                <span>Lattice Dimensions:</span>
-                <span className="text-emerald-400 font-bold">768 Reduced</span>
+                <span>Lattice Dimensions Reduced:</span>
+                <span className="text-emerald-400 font-bold">768 / 768 DIM</span>
               </div>
               <div className="flex justify-between">
                 <span>Final BKZ Block Size (β):</span>
@@ -603,7 +737,7 @@ export function App() {
               </div>
               <div className="flex justify-between">
                 <span>Cryptanalysis Result:</span>
-                <span className="text-cyan-400 font-bold">KYBER-768 BROKEN</span>
+                <span className="text-cyan-400 font-bold">ML-KEM-768 BROKEN</span>
               </div>
             </div>
 
@@ -611,7 +745,7 @@ export function App() {
               onClick={handleRestart}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg font-mono flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
             >
-              <RefreshCw className="w-4 h-4" /> RESTART ENGAGEMENT
+              <RefreshCw className="w-4 h-4" /> PLAY AGAIN
             </button>
           </div>
         </div>
@@ -628,7 +762,7 @@ export function App() {
               SYSTEM INTEGRITY CRITICAL
             </h2>
             <p className="text-slate-300 text-xs font-mono leading-relaxed">
-              The Module Leviathan's Binomial Noise Barrage overwhelmed your lattice reduction buffer before de-encapsulation was complete.
+              The Binomial Noise Barrage overwhelmed your system before de-encapsulation was complete. Tip: Time your Parry Blade inside the green circle to stay safe!
             </p>
 
             <button

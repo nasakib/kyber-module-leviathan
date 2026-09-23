@@ -6,6 +6,7 @@ export interface BossPhase {
   subtitle: string;
   minHpPercent: number; // e.g. 75 for phase 1, 40 for phase 2
   description: string;
+  tacticalTip: string;
 }
 
 export interface Vector2D {
@@ -25,6 +26,17 @@ export interface Particle {
   maxLife: number;
 }
 
+export interface FloatingText {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  color: string;
+  life: number;
+  maxLife: number;
+  fontSize: number;
+}
+
 export interface BossProjectile {
   id: string;
   x: number;
@@ -41,7 +53,7 @@ export interface BossProjectile {
 export interface ParryRing {
   id: string;
   radius: number;
-  targetRadius: number;
+  targetRadius: number; // The sweet spot zone radius (e.g. 70px)
   speed: number;
   active: boolean;
   angle: number;
@@ -59,9 +71,11 @@ export type WeaponId = 'kannan' | 'lll' | 'bkz' | 'visor' | 'coolant';
 export interface Weapon {
   id: WeaponId;
   name: string;
+  simpleName: string; // Novice friendly name (e.g. "Anchor Lock")
   cooldown: number; // total cooldown in seconds
   currentCooldown: number; // remaining cooldown in seconds
   description: string;
+  simpleGuide: string; // Novice friendly explanation
   shortcut: string;
   iconName: string;
 }
@@ -70,6 +84,7 @@ export interface CombatLogEntry {
   id: string;
   timestamp: string;
   text: string;
+  simpleTranslation?: string; // Novice friendly translation
   type: 'info' | 'player_action' | 'boss_attack' | 'warning' | 'phase_change' | 'critical';
 }
 
@@ -85,6 +100,11 @@ export interface GameState {
   memoryHeat: number; // 0 to 100%
   bkzBeta: number; // 20 to 120
   gramSchmidtVisor: boolean; // toggle
+  
+  // Combo & Juice
+  comboCount: number;
+  screenShake: number; // screen shake intensity
+  tacticalHint: string;
   
   // Parry / Phase mechanics
   lovaszAngle: number; // angle skew in radians

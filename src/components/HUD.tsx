@@ -11,6 +11,7 @@ import {
   Zap,
   Volume2,
   VolumeX,
+  Lightbulb,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -33,42 +34,55 @@ export const HUD: React.FC<HUDProps> = ({
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'anchor':
-        return <Anchor className="w-5 h-5" />;
+        return <Anchor className="w-4 h-4 text-cyan-400" />;
       case 'scissors':
-        return <Scissors className="w-5 h-5" />;
+        return <Scissors className="w-4 h-4 text-emerald-400" />;
       case 'flame':
-        return <Flame className="w-5 h-5" />;
+        return <Flame className="w-4 h-4 text-amber-400" />;
       case 'eye':
-        return <Eye className="w-5 h-5" />;
+        return <Eye className="w-4 h-4 text-purple-400" />;
       case 'wind':
-        return <Wind className="w-5 h-5" />;
+        return <Wind className="w-4 h-4 text-blue-400" />;
       default:
-        return <Zap className="w-5 h-5" />;
+        return <Zap className="w-4 h-4 text-cyan-400" />;
     }
   };
 
   const calculateOps = (beta: number) => {
-    // 2^(0.292 * beta) operations formula
     const exponent = 0.292 * beta;
     return `2^${exponent.toFixed(1)} ops`;
   };
 
   return (
-    <div className="flex flex-col gap-3 font-mono">
-      {/* Top Bar: Status Gauges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/90 border border-slate-800 rounded-lg p-3 backdrop-blur shadow-xl">
+    <div className="flex flex-col gap-2 font-mono">
+      {/* 1. Tactical Guidance Bar (Novice Friendly Tip) */}
+      <div className="bg-slate-900/90 border border-emerald-500/40 rounded-lg px-3 py-1.5 backdrop-blur flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-2 text-xs">
+          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 animate-bounce" />
+          <span className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">TACTICAL ADVICE:</span>
+          <span className="text-slate-200 text-xs font-semibold">{gameState.tacticalHint}</span>
+        </div>
+        {gameState.comboCount > 1 && (
+          <div className="text-xs font-bold text-emerald-400 animate-pulse bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+            {gameState.comboCount}x COMBO ACTIVE!
+          </div>
+        )}
+      </div>
+
+      {/* 2. Top Bar: Status Gauges */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 backdrop-blur shadow-xl">
         {/* Boss Entropy Bar */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="text-cyan-400 flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-cyan-400" />
-              LATTICE ENTROPY (BOSS)
+              LATTICE ENTROPY (BOSS HEALTH)
             </span>
             <span className="text-cyan-300">
               {Math.max(0, Math.round(gameState.bossHp))} / {gameState.maxBossHp} DIM
             </span>
           </div>
-          <div className="w-full h-4 bg-slate-950 rounded border border-cyan-900/50 p-0.5 relative overflow-hidden">
+          <div className="w-full h-3.5 bg-slate-950 rounded border border-cyan-900/50 p-0.5 relative overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-emerald-400 transition-all duration-300 rounded-sm"
               style={{
@@ -87,13 +101,13 @@ export const HUD: React.FC<HUDProps> = ({
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="text-emerald-400 flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-emerald-400" />
-              SYSTEM INTEGRITY (PLAYER)
+              SYSTEM INTEGRITY (PLAYER HEALTH)
             </span>
             <span className="text-emerald-300">
               {Math.max(0, Math.round(gameState.playerHp))} / {gameState.maxPlayerHp} HP
             </span>
           </div>
-          <div className="w-full h-4 bg-slate-950 rounded border border-emerald-900/50 p-0.5 relative overflow-hidden">
+          <div className="w-full h-3.5 bg-slate-950 rounded border border-emerald-900/50 p-0.5 relative overflow-hidden">
             <div
               className={`h-full transition-all duration-300 rounded-sm ${
                 gameState.playerHp < 30
@@ -106,7 +120,7 @@ export const HUD: React.FC<HUDProps> = ({
             />
           </div>
           <div className="text-[10px] text-slate-400 flex justify-between">
-            <span>PARRY ALIGNMENT: {gameState.lovaszThresholdSatisfied ? 'READY (δ=0.75)' : 'SKEWED'}</span>
+            <span>PARRY ALIGNMENT: {gameState.lovaszThresholdSatisfied ? 'READY (δ=0.75)' : 'WAITING'}</span>
             <span>{Math.round(gameState.playerHp)}%</span>
           </div>
         </div>
@@ -119,10 +133,10 @@ export const HUD: React.FC<HUDProps> = ({
               SIEVE MEMORY HEAT
             </span>
             <span className={`${gameState.memoryHeat > 80 ? 'text-rose-400 animate-pulse font-bold' : 'text-amber-300'}`}>
-              {Math.round(gameState.memoryHeat)}% {gameState.memoryHeat > 80 && '(OVERHEAT)'}
+              {Math.round(gameState.memoryHeat)}% {gameState.memoryHeat > 80 && '(OVERHEAT!)'}
             </span>
           </div>
-          <div className="w-full h-4 bg-slate-950 rounded border border-amber-900/50 p-0.5 relative overflow-hidden">
+          <div className="w-full h-3.5 bg-slate-950 rounded border border-amber-900/50 p-0.5 relative overflow-hidden">
             <div
               className={`h-full transition-all duration-200 rounded-sm ${
                 gameState.memoryHeat > 80
@@ -141,10 +155,10 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
       </div>
 
-      {/* Action Bar & Controls */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-3 backdrop-blur shadow-xl flex flex-col md:flex-row items-center justify-between gap-3">
+      {/* 3. Action Bar & Controls */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 backdrop-blur shadow-xl flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Weapon Buttons */}
-        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 flex-1">
+        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 flex-1">
           {weapons.map((w) => {
             const isVisor = w.id === 'visor';
             const isActiveVisor = isVisor && gameState.gramSchmidtVisor;
@@ -166,24 +180,23 @@ export const HUD: React.FC<HUDProps> = ({
                 <div className="relative">
                   {getIcon(w.iconName)}
                   {isOnCooldown && (
-                    <div
-                      className="absolute inset-0 bg-slate-950/80 rounded flex items-center justify-center text-[10px] text-cyan-400 font-bold"
-                    >
+                    <div className="absolute inset-0 bg-slate-950/85 rounded flex items-center justify-center text-[10px] text-cyan-400 font-bold">
                       {w.currentCooldown.toFixed(1)}s
                     </div>
                   )}
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="leading-none">{w.name}</span>
+                  <span className="leading-none text-[11px]">{w.simpleName}</span>
                   <span className="text-[9px] text-slate-400 font-normal mt-0.5">
                     [{w.shortcut}] {w.id === 'bkz' ? `(β=${gameState.bkzBeta})` : ''}
                   </span>
                 </div>
 
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-2 bg-slate-950 border border-slate-700 text-slate-300 text-[10px] rounded shadow-xl z-50 pointer-events-none">
-                  <p className="font-semibold text-cyan-400 mb-0.5">{w.name}</p>
-                  <p>{w.description}</p>
+                {/* Beginner Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-52 p-2.5 bg-slate-950 border border-cyan-500/50 text-slate-300 text-[10px] rounded-lg shadow-2xl z-50 pointer-events-none">
+                  <p className="font-bold text-cyan-400 mb-0.5">{w.simpleName} ({w.name})</p>
+                  <p className="text-emerald-300 mb-1 font-semibold">{w.simpleGuide}</p>
+                  <p className="text-slate-400 text-[9.5px] border-t border-slate-800 pt-1">{w.description}</p>
                 </div>
               </button>
             );

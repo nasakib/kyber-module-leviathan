@@ -64,13 +64,20 @@ export const CombatLog: React.FC<CombatLogProps> = ({ logs }) => {
         {logs.map((log) => (
           <div
             key={log.id}
-            className={`p-2 rounded border text-[11px] flex items-start gap-1 transition-all ${getTypeStyle(
+            className={`p-2 rounded border text-[11px] flex flex-col gap-0.5 transition-all ${getTypeStyle(
               log.type
             )}`}
           >
-            {getIcon(log.type)}
-            <span className="text-slate-500 font-normal shrink-0">[{log.timestamp}]</span>
-            <span className="break-words leading-relaxed">{log.text}</span>
+            <div className="flex items-start gap-1">
+              {getIcon(log.type)}
+              <span className="text-slate-500 font-normal shrink-0">[{log.timestamp}]</span>
+              <span className="break-words leading-relaxed font-semibold">{log.text}</span>
+            </div>
+            {log.simpleTranslation && (
+              <div className="text-[10px] text-slate-400 pl-6 italic font-normal">
+                💡 Translation: {log.simpleTranslation}
+              </div>
+            )}
           </div>
         ))}
       </div>
