@@ -1,16 +1,19 @@
 import React, { useRef, useEffect } from 'react';
 import { GameState, Particle, FloatingText } from '../types/game';
+import { angleBetween, norm, det2D } from '../utils/latticeMath';
 
 interface LatticeCanvasProps {
   gameState: GameState;
   particles: Particle[];
   floatingTexts: FloatingText[];
+  onAnalysisGateAnswer?: (optionIndex: number) => void;
 }
 
 export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
   gameState,
   particles,
   floatingTexts,
+  onAnalysisGateAnswer,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -39,193 +42,244 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
         ctx.translate(shakeX, shakeY);
       }
 
-      const vanishingX = width / 2;
-      const vanishingY = height * 0.35; // horizon line
+      const centerX = width / 2;
+      const centerY = height / 2;
 
-      // 1. Clear background (deep cyberpunk space)
-      ctx.fillStyle = '#020617';
-      ctx.fillRect(0, 0, width, height);
-
-      // Starfield background particles
-      ctx.fillStyle = '#ffffff';
-      const time = Date.now() * 0.001;
-      for (let s = 0; s < 40; s++) {
-        const sx = (Math.sin(s * 99 + time * 0.2) * 0.5 + 0.5) * width;
-        const sy = (Math.cos(s * 33 + time * 0.3) * 0.5 + 0.5) * (vanishingY);
-        ctx.beginPath();
-        ctx.arc(sx, sy, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // 2. 3D Perspective Tunnel Grid Lines
-      const laneWidthsAtBottom = width * 0.28;
-      const laneOffsets = [-laneWidthsAtBottom, 0, laneWidthsAtBottom];
-
-      // Draw perspective lane boundaries
-      ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 2;
-      for (let l = -1.5; l <= 1.5; l += 1) {
-        const bottomX = vanishingX + l * laneWidthsAtBottom * 1.2;
-        ctx.beginPath();
-        ctx.moveTo(vanishingX, vanishingY);
-        ctx.lineTo(bottomX, height);
-        ctx.stroke();
-      }
-
-      // Draw moving horizontal tunnel grid lines (Z-perspective scroll)
-      const scrollOffset = (gameState.distance * 8) % 40;
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.5;
-      for (let z = 0; z < 20; z++) {
-        const zPos = (z * 40 + scrollOffset) / 800; // 0 (horizon) to 1 (bottom)
-        const currentY = vanishingY + (height - vanishingY) * Math.pow(zPos, 2);
-        const currentW = width * Math.pow(zPos, 2);
-
-        ctx.beginPath();
-        ctx.moveTo(vanishingX - currentW / 2, currentY);
-        ctx.lineTo(vanishingX + currentW / 2, currentY);
-        ctx.stroke();
-      }
-
-      // Highlight active lane track glows
-      const shipTargetX = vanishingX + laneOffsets[gameState.shipLane + 1];
-      ctx.fillStyle = 'rgba(34, 211, 238, 0.06)';
-      ctx.beginPath();
-      ctx.moveTo(vanishingX, vanishingY);
-      ctx.lineTo(shipTargetX - laneWidthsAtBottom * 0.5, height);
-      ctx.lineTo(shipTargetX + laneWidthsAtBottom * 0.5, height);
-      ctx.closePath();
-      ctx.fill();
-
-      // 3. Kyber Leviathan Boss hovering ahead in tunnel
-      const bossScale = 0.4 + (gameState.bossHp / gameState.maxBossHp) * 0.3;
-      const bossY = vanishingY - 20;
-      const bossRadius = 45 * bossScale;
-
-      ctx.save();
-      ctx.translate(vanishingX, bossY);
-      ctx.strokeStyle = gameState.bossPhase === 4 ? '#f43f5e' : '#22d3ee';
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = ctx.strokeStyle;
-
-      ctx.beginPath();
-      ctx.arc(0, 0, bossRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Rotating inner polygon
-      ctx.rotate(time * 2);
-      ctx.strokeStyle = '#34d399';
-      ctx.beginPath();
-      const sides = 6;
-      for (let k = 0; k < sides; k++) {
-        const angle = (k * 2 * Math.PI) / sides;
-        const rx = (bossRadius - 10) * Math.cos(angle);
-        const ry = (bossRadius - 10) * Math.sin(angle);
-        if (k === 0) ctx.moveTo(rx, ry);
-        else ctx.lineTo(rx, ry);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.restore();
-
-      // Boss Label & Entropy
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 13px "JetBrains Mono", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('KYBER LEVIATHAN', vanishingX, bossY - bossRadius - 15);
-      ctx.font = '10px "JetBrains Mono", monospace';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`ENTROPY: ${Math.round(gameState.bossHp)} DIM`, vanishingX, bossY - bossRadius - 3);
-
-      // 4. Render Incoming 3D Obstacles
-      gameState.obstacles.forEach((obs) => {
-        const zRatio = Math.max(0, Math.min(1, obs.z / 100)); // 0 (far) to 1 (near)
-        const obsY = vanishingY + (height - vanishingY - 80) * Math.pow(zRatio, 2);
-        const laneCenterX = vanishingX + laneOffsets[obs.lane + 1] * zRatio;
-        const scale = 0.2 + zRatio * 0.8;
-
-        const w = 70 * scale;
-        const h = obs.type === 'high_gate' ? 90 * scale : 40 * scale;
-
-        ctx.fillStyle = obs.color;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2 * scale;
-        ctx.shadowBlur = 15 * scale;
-        ctx.shadowColor = obs.color;
-
-        ctx.fillRect(laneCenterX - w / 2, obsY - h, w, h);
-        ctx.strokeRect(laneCenterX - w / 2, obsY - h, w, h);
-        ctx.shadowBlur = 0;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.max(9, Math.round(11 * scale))}px "JetBrains Mono", monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText(obs.label, laneCenterX, obsY - h / 2 + 4);
-      });
-
-      // 5. Render Incoming STEM Powerups
-      gameState.powerups.forEach((pw) => {
-        const zRatio = Math.max(0, Math.min(1, pw.z / 100));
-        const scale = 0.2 + zRatio * 0.8;
-        const pwY = vanishingY + (height - vanishingY - 80) * Math.pow(zRatio, 2) - 25 * scale;
-        const laneCenterX = vanishingX + laneOffsets[pw.lane + 1] * zRatio;
-        const radius = 18 * scale;
-
-        ctx.fillStyle = pw.color;
-        ctx.shadowBlur = 20 * scale;
-        ctx.shadowColor = pw.color;
-
-        ctx.beginPath();
-        ctx.arc(laneCenterX, pwY, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
+      // MODE 1 & MODE 2: 2D TOPOLOGICAL INSPECTION CANVAS (Academy & Solver Lab)
+      if (gameState.appMode === 'academy' || gameState.appMode === 'solver') {
+        // Clear slate-950 background
         ctx.fillStyle = '#020617';
-        ctx.font = `bold ${Math.max(8, Math.round(10 * scale))}px "JetBrains Mono", monospace`;
+        ctx.fillRect(0, 0, width, height);
+
+        // Faint background grid
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1;
+        const gridSize = 40;
+        for (let x = 0; x < width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+
+        // Coordinate Axes
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-width / 2, 0);
+        ctx.lineTo(width / 2, 0);
+        ctx.moveTo(0, -height / 2);
+        ctx.lineTo(0, height / 2);
+        ctx.stroke();
+
+        // Retrieve current basis matrix & target
+        let b1 = gameState.solverMatrix.b1;
+        let b2 = gameState.solverMatrix.b2;
+        let target = gameState.solverTarget;
+
+        if (gameState.appMode === 'academy') {
+          // Compute basis based on interactive angle probe
+          const rad = (gameState.interactiveAngle * Math.PI) / 180;
+          b1 = { x: 120, y: 0 };
+          b2 = { x: 120 * Math.cos(rad), y: -120 * Math.sin(rad) };
+          target = { x: 150, y: -80 };
+        } else if (gameState.solverSteps.length > 0) {
+          const currentStep = gameState.solverSteps[gameState.currentStepIndex] || gameState.solverSteps[0];
+          b1 = currentStep.matrix.b1;
+          b2 = currentStep.matrix.b2;
+        }
+
+        // Shaded Fundamental Domain Parallelogram (Area = det L)
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.12)';
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.4)';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(b1.x, b1.y);
+        ctx.lineTo(b1.x + b2.x, b1.y + b2.y);
+        ctx.lineTo(b2.x, b2.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Enclosed Area Label
+        const fundamentalArea = det2D({ b1, b2 }).toFixed(0);
+        ctx.fillStyle = '#22d3ee';
+        ctx.font = 'bold 12px "JetBrains Mono", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(pw.label, laneCenterX, pwY + 3);
-      });
+        ctx.fillText(`det(L) = ${fundamentalArea} px²`, (b1.x + b2.x) / 2, (b1.y + b2.y) / 2);
 
-      // 6. Player Starfighter Ship (Foreground)
-      const shipBaseY = height - 100;
-      const currentShipX = vanishingX + laneOffsets[gameState.shipLane + 1];
-      const currentShipY = shipBaseY - gameState.shipY;
+        // Render Lattice Points grid L(B) = z1*b1 + z2*b2
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.3)';
+        ctx.lineWidth = 1;
+        const gridRange = 3;
+        for (let i = -gridRange; i <= gridRange; i++) {
+          for (let j = -gridRange; j <= gridRange; j++) {
+            const px = i * b1.x + j * b2.x;
+            const py = i * b1.y + j * b2.y;
 
-      // Draw Ship Flame Thrusters
-      ctx.fillStyle = '#22d3ee';
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = '#22d3ee';
-      ctx.beginPath();
-      ctx.moveTo(currentShipX - 10, currentShipY + 20);
-      ctx.lineTo(currentShipX + 10, currentShipY + 20);
-      ctx.lineTo(currentShipX, currentShipY + 40 + Math.random() * 10);
-      ctx.closePath();
-      ctx.fill();
-      ctx.shadowBlur = 0;
+            ctx.fillStyle = '#34d399';
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
 
-      // Draw Cyber Starfighter Body
-      ctx.fillStyle = gameState.shipState === 'sliding' ? '#fbbf24' : (gameState.shipState === 'jumping' ? '#34d399' : '#38bdf8');
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+        // Dynamic Angle Arc θ between b1 and b2
+        const currentAngle = angleBetween(b1, b2);
+        const arcRadius = 35;
+        const startAngle = Math.atan2(b1.y, b1.x);
+        const endAngle = Math.atan2(b2.y, b2.x);
 
-      ctx.beginPath();
-      ctx.moveTo(currentShipX, currentShipY - 25); // nose
-      ctx.lineTo(currentShipX - 25, currentShipY + 20); // left wing
-      ctx.lineTo(currentShipX, currentShipY + 10); // center tail
-      ctx.lineTo(currentShipX + 25, currentShipY + 20); // right wing
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, arcRadius, Math.min(startAngle, endAngle), Math.max(startAngle, endAngle));
+        ctx.stroke();
 
-      // Ship Cockpit Glow
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(currentShipX, currentShipY - 5, 5, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.fillText(`θ = ${currentAngle.toFixed(1)}°`, arcRadius + 10, -5);
 
-      // 7. Render Particles & Floating Texts
+        // Gram-Schmidt Orthogonal Shadow Projection (b2*)
+        if (gameState.gramSchmidtVisor || gameState.appMode === 'solver') {
+          ctx.strokeStyle = '#a855f7'; // purple-400
+          ctx.setLineDash([5, 5]);
+          ctx.lineWidth = 2;
+
+          // Proj of b2 onto b1
+          const b1NormSq = norm(b1) * norm(b1) || 1;
+          const mu = (b2.x * b1.x + b2.y * b1.y) / b1NormSq;
+          const projX = b1.x * mu;
+          const projY = b1.y * mu;
+
+          // Perpendicular projection line
+          ctx.beginPath();
+          ctx.moveTo(b2.x, b2.y);
+          ctx.lineTo(projX, projY);
+          ctx.stroke();
+          ctx.setLineDash([]); // reset
+
+          ctx.fillStyle = '#a855f7';
+          ctx.fillText(`b₂* (Shadow)`, b2.x + 10, b2.y - 10);
+        }
+
+        // Basis Vector b1 (cyan arrow)
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(b1.x, b1.y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#22d3ee';
+        ctx.beginPath();
+        ctx.arc(b1.x, b1.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = 'bold 13px "JetBrains Mono", monospace';
+        ctx.fillText(`b₁ (${b1.x.toFixed(0)}, ${b1.y.toFixed(0)})`, b1.x + 10, b1.y);
+
+        // Basis Vector b2 (amber arrow)
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(b2.x, b2.y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(b2.x, b2.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText(`b₂ (${b2.x.toFixed(0)}, ${b2.y.toFixed(0)})`, b2.x + 10, b2.y);
+
+        // Target Vector t & Babai CVP Result
+        if (target) {
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(target.x, target.y);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(target.x, target.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = 'bold 12px "JetBrains Mono", monospace';
+          ctx.fillText(`Target t (${target.x.toFixed(0)}, ${target.y.toFixed(0)})`, target.x + 12, target.y);
+        }
+
+        ctx.restore(); // restore center translation
+      } else {
+        // MODE 3: 3D PERSPECTIVE TUNNEL MODE WITH ANALYSIS GATES (Boss Mode)
+        const vanishingX = width / 2;
+        const vanishingY = height * 0.35;
+
+        // Deep space background
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, width, height);
+
+        // Perspective grid lines
+        const laneWidthsAtBottom = width * 0.28;
+        const laneOffsets = [-laneWidthsAtBottom, 0, laneWidthsAtBottom];
+
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        for (let l = -1.5; l <= 1.5; l += 1) {
+          const bottomX = vanishingX + l * laneWidthsAtBottom * 1.2;
+          ctx.beginPath();
+          ctx.moveTo(vanishingX, vanishingY);
+          ctx.lineTo(bottomX, height);
+          ctx.stroke();
+        }
+
+        // Kyber Leviathan Boss
+        const bossScale = 0.4 + (gameState.bossHp / gameState.maxBossHp) * 0.3;
+        const bossY = vanishingY - 20;
+        const bossRadius = 45 * bossScale;
+
+        ctx.save();
+        ctx.translate(vanishingX, bossY);
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = '#22d3ee';
+        ctx.beginPath();
+        ctx.arc(0, 0, bossRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        // Player Starfighter Ship
+        const shipBaseY = height - 100;
+        const currentShipX = vanishingX + laneOffsets[gameState.shipLane + 1];
+        const currentShipY = shipBaseY - gameState.shipY;
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(currentShipX, currentShipY - 25);
+        ctx.lineTo(currentShipX - 25, currentShipY + 20);
+        ctx.lineTo(currentShipX, currentShipY + 10);
+        ctx.lineTo(currentShipX + 25, currentShipY + 20);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Particles & Floating Texts
       particles.forEach((p) => {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
@@ -257,6 +311,39 @@ export const LatticeCanvas: React.FC<LatticeCanvasProps> = ({
   return (
     <div className="relative w-full h-full border border-slate-800 rounded-lg overflow-hidden shadow-2xl">
       <canvas ref={canvasRef} className="w-full h-full block" />
+
+      {/* Analysis Gate Checkpoint Modal Overlay (Boss Mode Slow-Mo Checkpoint) */}
+      {gameState.isAnalysisGateActive && (
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-40 font-mono animate-fadeIn">
+          <div className="bg-slate-900 border-2 border-cyan-500 rounded-xl p-5 max-w-lg w-full shadow-2xl flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                ⚡ ANALYSIS GATE CHECKPOINT (SLOW-MOTION)
+              </span>
+              <span className="text-[10px] bg-cyan-950 px-2 py-0.5 rounded text-cyan-300 font-bold border border-cyan-800">
+                TACTICAL DECISION
+              </span>
+            </div>
+
+            <p className="text-xs font-bold text-slate-100 leading-relaxed">
+              {gameState.gateQuestion}
+            </p>
+
+            <div className="grid grid-cols-1 gap-2 mt-1">
+              {gameState.gateOptions.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onAnalysisGateAnswer && onAnalysisGateAnswer(idx)}
+                  className="p-2.5 rounded bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-400 text-left text-xs font-semibold text-slate-200 transition"
+                >
+                  <span className="font-bold text-cyan-400 mr-2">[{idx + 1}]</span>
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
