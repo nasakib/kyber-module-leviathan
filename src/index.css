@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scanline {
+    background: linear-gradient(
+      to bottom,
+      rgba(255,255,255,0),
+      rgba(255,255,255,0) 50%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.3)
+    );
+    background-size: 100% 4px;
+  }
+}
+
+/* Custom glow animations */
+@keyframes pulse-cyan {
+  0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.8); }
+}
+
+@keyframes pulse-emerald {
+  0%, 100% { box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(52, 211, 153, 0.8); }
+}
+
+@keyframes pulse-amber {
+  0%, 100% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.8); }
+}
+
+@keyframes pulse-rose {
+  0%, 100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.8); }
+}
+
+.glow-cyan { animation: pulse-cyan 2s infinite; }
+.glow-emerald { animation: pulse-emerald 2s infinite; }
+.glow-amber { animation: pulse-amber 2s infinite; }
+.glow-rose { animation: pulse-rose 1.5s infinite; }
