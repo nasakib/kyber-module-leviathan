@@ -25,6 +25,8 @@ import { AuthModal } from './components/AuthModal';
 import { CommunityBrowser } from './components/CommunityBrowser';
 import { ClassroomModal } from './components/ClassroomModal';
 import { PublishLevelModal } from './components/PublishLevelModal';
+import { OscilloscopeCanvas } from './components/OscilloscopeCanvas';
+import { OnboardingDiagnostic } from './components/OnboardingDiagnostic';
 import { checkEnergyBudget } from './components/EnergyBudgetMeter';
 import { soundEngine } from './utils/audio';
 import confetti from 'canvas-confetti';
@@ -32,7 +34,8 @@ import confetti from 'canvas-confetti';
 const STORAGE_KEY = 'vectorforge_save_v1';
 
 const VectorForgeApp: React.FC = () => {
-  const { user, profile, isConfigured } = useAuth();
+  const { user, profile, completeDiagnostic, isConfigured } = useAuth();
+  const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
 
   // App Mode: 'puzzle' (campaign) vs 'sandbox'
   const [appMode, setAppMode] = useState<AppMode>('puzzle');
@@ -316,8 +319,10 @@ const VectorForgeApp: React.FC = () => {
         isMuted={isMuted}
         onToggleMute={toggleMute}
         isCloudConnected={isConfigured}
-        userDisplayName={profile?.displayName}
+        userDisplayName={profile?.display_name}
         userRole={profile?.role}
+        userTier={profile?.tier}
+        onOpenDiagnostic={() => setIsDiagnosticOpen(true)}
       />
 
       {/* Main Workspace Area */}
@@ -342,16 +347,25 @@ const VectorForgeApp: React.FC = () => {
 
         {appMode === 'puzzle' ? (
           <>
-            {/* 60 FPS HTML5 Canvas Engine */}
-            <LevelCanvas
-              level={currentLevel}
-              params={params}
-              onParamChange={handleParamChange}
-              isFiring={isFiring}
-              onSimulationComplete={handleSimulationComplete}
-              playHitSound={(i) => soundEngine.playTargetHit(i)}
-              playObstacleSound={() => soundEngine.playObstacleClang()}
-            />
+            {/* 60 FPS HTML5 Canvas Engine or Wave Oscilloscope */}
+            {currentLevel.sectorId === 'frequency' || currentLevel.type === 'frequency_wave' ? (
+              <OscilloscopeCanvas
+                level={currentLevel}
+                params={params}
+                isFiring={isFiring}
+                onSimulationComplete={handleSimulationComplete}
+              />
+            ) : (
+              <LevelCanvas
+                level={currentLevel}
+                params={params}
+                onParamChange={handleParamChange}
+                isFiring={isFiring}
+                onSimulationComplete={handleSimulationComplete}
+                playHitSound={(i) => soundEngine.playTargetHit(i)}
+                playObstacleSound={() => soundEngine.playObstacleClang()}
+              />
+            )}
 
             {/* Futuristic Cyberpunk Control Terminal */}
             <ControlTerminal
@@ -465,6 +479,20 @@ const VectorForgeApp: React.FC = () => {
         onClose={() => setIsPublishOpen(false)}
         levelToPublish={currentLevel}
       />
+
+      {/* Visual Zero-Jargon Onboarding Diagnostic Modal */}
+      {(!profile.diagnostic_completed || isDiagnosticOpen) && (
+        <OnboardingDiagnostic
+          onComplete={(tier) => {
+            completeDiagnostic(tier);
+            setIsDiagnosticOpen(false);
+          }}
+          onSkip={() => {
+            completeDiagnostic('cadet');
+            setIsDiagnosticOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

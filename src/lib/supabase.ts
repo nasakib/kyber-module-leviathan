@@ -3,12 +3,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const STORAGE_CUSTOM_URL_KEY = 'vectorforge_supabase_url';
 const STORAGE_CUSTOM_ANON_KEY = 'vectorforge_supabase_anon_key';
 
-// Check environment variables first, then localStorage custom credentials
 function getInitialCredentials() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const metaEnv = (import.meta as any).env || {};
-  const envUrl = metaEnv.VITE_SUPABASE_URL as string | undefined;
-  const envKey = metaEnv.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const envUrl = (metaEnv.VITE_SUPABASE_URL as string | undefined) || '';
+  const envKey = (metaEnv.VITE_SUPABASE_ANON_KEY as string | undefined) || '';
 
   let localUrl = '';
   let localKey = '';
@@ -35,30 +34,22 @@ function getInitialCredentials() {
   };
 }
 
-let supabaseInstance: SupabaseClient | null = null;
-let currentConfig = getInitialCredentials();
+const currentConfig = getInitialCredentials();
 
-if (currentConfig.isValid) {
-  try {
-    supabaseInstance = createClient(currentConfig.url, currentConfig.key, {
+export const isSupabaseConfigured = currentConfig.isValid;
+
+export const supabase: SupabaseClient | null = isSupabaseConfigured
+  ? createClient(currentConfig.url, currentConfig.key, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
-    });
-  } catch (err) {
-    console.warn('VectorForge: Failed to initialize Supabase client:', err);
-    supabaseInstance = null;
-  }
-}
+    })
+  : null;
 
 export function getSupabase(): SupabaseClient | null {
-  return supabaseInstance;
-}
-
-export function isSupabaseConfigured(): boolean {
-  return !!supabaseInstance && currentConfig.isValid;
+  return supabase;
 }
 
 export function getSupabaseConfig() {
@@ -66,7 +57,7 @@ export function getSupabaseConfig() {
     url: currentConfig.url,
     anonKey: currentConfig.key,
     isCustom: currentConfig.isCustom,
-    isConfigured: isSupabaseConfigured(),
+    isConfigured: isSupabaseConfigured,
   };
 }
 
@@ -75,36 +66,17 @@ export function updateSupabaseConfig(url: string, anonKey: string): boolean {
   const trimmedKey = anonKey.trim();
 
   if (!trimmedUrl || !trimmedKey) {
-    // Clear custom config
     localStorage.removeItem(STORAGE_CUSTOM_URL_KEY);
     localStorage.removeItem(STORAGE_CUSTOM_ANON_KEY);
-    currentConfig = getInitialCredentials();
-    if (currentConfig.isValid) {
-      supabaseInstance = createClient(currentConfig.url, currentConfig.key);
-    } else {
-      supabaseInstance = null;
-    }
     return false;
   }
 
   try {
     localStorage.setItem(STORAGE_CUSTOM_URL_KEY, trimmedUrl);
     localStorage.setItem(STORAGE_CUSTOM_ANON_KEY, trimmedKey);
-    supabaseInstance = createClient(trimmedUrl, trimmedKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    });
-    currentConfig = {
-      url: trimmedUrl,
-      key: trimmedKey,
-      isValid: true,
-      isCustom: true,
-    };
     return true;
   } catch (err) {
-    console.error('VectorForge: Could not configure Supabase client with given credentials:', err);
+    console.error('VectorForge: Could not save credentials:', err);
     return false;
   }
 }

@@ -1820,6 +1820,326 @@ export const ALL_LEVELS: LevelDefinition[] = [
       'Basis vectors are [2, 1] and [1, 1].',
       '1·[2, 1] + 1·[1, 1] = [3, 2]. Set s₁ = 1 and s₂ = 1.'
     ]
+  },
+
+  // ==========================================
+  // SECTOR 6: THE HARMONIC OSCILLATOR (WAVE ENGINE)
+  // ==========================================
+  {
+    id: 's6_l1',
+    sectorId: 'frequency',
+    sectorTitle: 'Sector 6: The Harmonic Oscillator',
+    levelNumber: 1,
+    code: '6.1',
+    title: 'Resonance Shatter',
+    subtitle: 'Natural Frequency Matching & Acoustic Amplification',
+    description: 'An acoustic resonance barrier blocks the sector corridor. Match its natural resonant frequency (ω₀ = 10 rad/s) and amplify the waveform to shatter the crystalline lattice.',
+    type: 'frequency_wave',
+    waveMode: 'resonance',
+    targetFrequency: 10.0,
+    defaultParams: { amplitude: 1.0, frequency: 4.0, phase: 0.0 },
+    solutionParams: { amplitude: 3.5, frequency: 10.0, phase: 0.0 },
+    paramControls: [
+      {
+        key: 'frequency',
+        label: 'Frequency (ω)',
+        symbol: '\\omega',
+        min: 1.0,
+        max: 15.0,
+        step: 0.25,
+        unit: 'rad/s',
+        defaultValue: 4.0,
+        description: 'Angular frequency of the oscillating driver (cycles per time)',
+        mathMeaning: '\\omega = 2\\pi f = \\frac{2\\pi}{T}',
+        geometricRole: 'Compresses or expands wave peaks in time; matches acoustic resonance',
+        objectiveHint: 'The barrier vibrates naturally at ω₀ = 10.0 rad/s. Tune ω to 10.0 to induce maximum resonant coupling.'
+      },
+      {
+        key: 'amplitude',
+        label: 'Amplitude (A)',
+        symbol: 'A',
+        min: 0.5,
+        max: 5.0,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Maximum wave crest displacement from equilibrium',
+        mathMeaning: 'A = \\max(|y(t)|)',
+        geometricRole: 'Scales wave energy and physical displacement height',
+        objectiveHint: 'Increase Amplitude to at least 3.0 to exceed the barrier shatter threshold.'
+      },
+      {
+        key: 'phase',
+        label: 'Phase Offset (φ)',
+        symbol: '\\phi',
+        min: -3.14,
+        max: 3.14,
+        step: 0.314,
+        unit: 'rad',
+        defaultValue: 0.0,
+        description: 'Initial starting angle of the oscillation wave cycle',
+        mathMeaning: 'y(0) = A\\sin(\\phi)',
+        geometricRole: 'Shifts wave peaks horizontally in time without altering pitch',
+        objectiveHint: 'Phase controls initial wave timing. Leave near 0 for direct resonance.'
+      }
+    ],
+    targets: [
+      { id: 'target_shatter', x: 9, y: 0, radius: 1.0, label: 'Acoustic Barrier (ω₀ = 10 rad/s)' }
+    ],
+    obstacles: [],
+    bounds: { minX: 0, maxX: 12, minY: -6, maxY: 6 },
+    curriculum: {
+      standard: 'HS-PS4-1 / AP Physics 1 (Simple Harmonic Motion & Resonance)',
+      standardName: 'Driven Oscillations & Mechanical Resonance',
+      topicCategory: 'Trigonometry & Wave Mechanics',
+      intuition: 'Every oscillating system has a natural frequency $\\omega_0$. When a periodic driving force matches that exact natural frequency, energy builds up continuously rather than dissipating, causing runaway amplitude until structural failure occurs (mechanical resonance).',
+      keyFormulaLatex: 'y(t) = A\\sin(\\omega t + \\phi), \\quad A(\\omega) = \\frac{F_0}{\\sqrt{(\\omega_0^2 - \\omega^2)^2 + (\\gamma\\omega)^2}}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Identify Resonant Frequency',
+          mathExpression: '\\omega_0 = 10.0 \\text{ rad/s}',
+          explanation: 'The crystalline barrier will shatter when the driving frequency matches its natural harmonic frequency.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Calibrate Frequency Dial',
+          mathExpression: '\\omega = 10.0 \\text{ rad/s}',
+          explanation: 'Tuning the angular frequency to 10.0 rad/s establishes zero phase lag and maximum mechanical coupling.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Amplify Beyond Shatter Threshold',
+          mathExpression: 'A \\ge 3.0 \\implies A = 3.5',
+          explanation: 'Elevating amplitude to 3.5 delivers sufficient kinetic energy to breach the barrier.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'A', name: 'Amplitude', role: 'Wave crest height and energy carrier', currentValueKey: 'amplitude' },
+        { symbol: '\\omega', name: 'Angular Frequency', role: 'Rate of oscillation in radians per second', currentValueKey: 'frequency' },
+        { symbol: '\\phi', name: 'Phase Shift', role: 'Temporal starting offset of the wave', currentValueKey: 'phase' }
+      ]
+    },
+    hints: [
+      'The barrier vibrates at a natural resonance frequency of ω₀ = 10.0 rad/s.',
+      'Tune the Frequency dial to 10.00 rad/s to establish acoustic coupling.',
+      'Turn Amplitude up to 3.5 to deliver enough kinetic energy to shatter the barrier.'
+    ]
+  },
+  {
+    id: 's6_l2',
+    sectorId: 'frequency',
+    sectorTitle: 'Sector 6: The Harmonic Oscillator',
+    levelNumber: 2,
+    code: '6.2',
+    title: 'Destructive Phase Cancellation',
+    subtitle: 'Superposition & Active Noise Cancellation',
+    description: 'A hostile jamming pulse y_noise(t) = 5·sin(4t) is corrupting sensor telemetry. Synthesize an anti-wave with identical amplitude and frequency but inverted phase (φ = π rad) to produce complete silence.',
+    type: 'frequency_wave',
+    waveMode: 'cancellation',
+    noiseWave: { amplitude: 5.0, frequency: 4.0, phase: 0.0 },
+    defaultParams: { amplitude: 2.0, frequency: 2.0, phase: 0.0 },
+    solutionParams: { amplitude: 5.0, frequency: 4.0, phase: 3.14 },
+    paramControls: [
+      {
+        key: 'frequency',
+        label: 'Frequency (ω)',
+        symbol: '\\omega',
+        min: 1.0,
+        max: 8.0,
+        step: 0.5,
+        unit: 'rad/s',
+        defaultValue: 2.0,
+        description: 'Anti-wave frequency to match the incoming hostile signal',
+        mathMeaning: '\\omega_1 = \\omega_{\\text{noise}}',
+        geometricRole: 'Aligns the rhythm of anti-crests with incoming noise crests',
+        objectiveHint: 'Jamming signal frequency is 4.0 rad/s. Tune your frequency to 4.0 to align wave periods.'
+      },
+      {
+        key: 'amplitude',
+        label: 'Amplitude (A)',
+        symbol: 'A',
+        min: 0.5,
+        max: 6.0,
+        step: 0.5,
+        defaultValue: 2.0,
+        description: 'Anti-wave amplitude to exactly match the incoming noise height',
+        mathMeaning: 'A_1 = A_{\\text{noise}} = 5.0',
+        geometricRole: 'Ensures equal and opposite peak heights for total nullification',
+        objectiveHint: 'Hostile wave amplitude is 5.0. Match your amplitude to 5.0.'
+      },
+      {
+        key: 'phase',
+        label: 'Phase Offset (φ)',
+        symbol: '\\phi',
+        min: -3.14,
+        max: 3.14,
+        step: 0.314,
+        unit: 'rad',
+        defaultValue: 0.0,
+        description: 'Phase inversion offset in radians (π rad = 180°)',
+        mathMeaning: '\\sin(\\theta + \\pi) = -\\sin(\\theta)',
+        geometricRole: 'Inverts the waveform upside down to create perfect cancellation',
+        objectiveHint: 'Set phase to π (≈ 3.14 rad). This turns peaks into troughs to annihilate the jamming wave.'
+      }
+    ],
+    targets: [
+      { id: 'target_cancel', x: 6, y: 0, radius: 0.5, label: 'Zero Interference Line (y_sum = 0)' }
+    ],
+    obstacles: [],
+    bounds: { minX: 0, maxX: 12, minY: -6, maxY: 6 },
+    curriculum: {
+      standard: 'AP Physics 2 / High School Trigonometry: Sum-to-Product Identities',
+      standardName: 'Wave Interference and Destructive Superposition',
+      topicCategory: 'Wave Mechanics & Trigonometric Identities',
+      intuition: 'When two waves collide, their heights sum linearly: $y_{\\text{sum}} = y_1 + y_2$. By trigonometry, $\\sin(\\theta + \\pi) = -\\sin(\\theta)$. An anti-wave with matching amplitude and frequency, phase-shifted by $\\pi$ radians ($180^\\circ$), results in $5\\sin(4t) + 5\\sin(4t + \\pi) = 5\\sin(4t) - 5\\sin(4t) = 0$, producing total destructive cancellation.',
+      keyFormulaLatex: 'y_{\\text{sum}}(t) = A_1\\sin(\\omega t) + A_2\\sin(\\omega t + \\phi) = 0 \\iff A_1 = A_2, \\, \\phi = (2k+1)\\pi',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Match Jamming Frequency',
+          mathExpression: '\\omega = 4.0 \\text{ rad/s}',
+          explanation: 'Synchronize period with the incoming hostile pulse.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Match Jamming Amplitude',
+          mathExpression: 'A = 5.0',
+          explanation: 'Equalize opposing wave energies for total cancellation.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Invert Phase by π Radians',
+          mathExpression: '\\phi = \\pi \\approx 3.14 \\text{ rad} \\implies \\sin(4t + \\pi) = -\\sin(4t)',
+          explanation: 'Flips waveform 180 degrees so troughs cancel incoming peaks.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'y_{\\text{sum}}', name: 'Superposition Wave', role: 'Composite sum of user wave and hostile noise' },
+        { symbol: '\\phi = \\pi', name: 'Phase Inversion', role: '180-degree shift creating exact negative symmetry' },
+        { symbol: 'A = 5.0', name: 'Opposing Amplitude', role: 'Magnitude matching noise energy', currentValueKey: 'amplitude' }
+      ]
+    },
+    hints: [
+      'The noise wave has amplitude 5.0 and frequency 4.0 rad/s.',
+      'Set your synthesizer amplitude to 5.0 and frequency to 4.0.',
+      'Rotate the phase dial to 3.14 rad (π) to invert the waveform and achieve 100% destructive interference.'
+    ]
+  },
+  {
+    id: 's6_l3',
+    sectorId: 'frequency',
+    sectorTitle: 'Sector 6: The Harmonic Oscillator',
+    levelNumber: 3,
+    code: '6.3',
+    title: 'Lissajous Portal Knot',
+    subtitle: '2D Orthogonal Harmonics & Parametric Trajectories',
+    description: 'To open the harmonic subspace conduit, weave an electron beam through 3 spatial gates simultaneously using 2D harmonic motion: x(t) = 4·sin(ω_x·t + δ), y(t) = 4·sin(ω_y·t). Establish a 3:2 frequency ratio with δ = π/2.',
+    type: 'frequency_wave',
+    waveMode: 'lissajous',
+    targetRatio: { a: 3, b: 2, delta: 1.57 },
+    defaultParams: { amplitude: 4.0, frequency: 2.0, omega_y: 2.0, phase: 0.0 },
+    solutionParams: { amplitude: 4.0, frequency: 3.0, omega_y: 2.0, phase: 1.57 },
+    paramControls: [
+      {
+        key: 'frequency',
+        label: 'Horizontal Frequency (ω_x)',
+        symbol: '\\omega_x',
+        min: 1.0,
+        max: 6.0,
+        step: 0.5,
+        unit: 'rad/s',
+        defaultValue: 2.0,
+        description: 'Oscillation rate along the horizontal axis',
+        mathMeaning: 'x(t) = A\\sin(\\omega_x t + \\delta)',
+        geometricRole: 'Controls number of vertical lobes and horizontal traversal speed',
+        objectiveHint: 'Set Horizontal Frequency to 3.0 rad/s to establish the 3:2 frequency ratio.'
+      },
+      {
+        key: 'omega_y',
+        label: 'Vertical Frequency (ω_y)',
+        symbol: '\\omega_y',
+        min: 1.0,
+        max: 6.0,
+        step: 0.5,
+        unit: 'rad/s',
+        defaultValue: 2.0,
+        description: 'Oscillation rate along the vertical axis',
+        mathMeaning: 'y(t) = A\\sin(\\omega_y t)',
+        geometricRole: 'Controls number of horizontal lobes and vertical traversal speed',
+        objectiveHint: 'Keep Vertical Frequency at 2.0 rad/s for the 3:2 clover knot.'
+      },
+      {
+        key: 'phase',
+        label: 'Phase Offset (δ)',
+        symbol: '\\delta',
+        min: 0.0,
+        max: 3.14,
+        step: 0.157,
+        unit: 'rad',
+        defaultValue: 0.0,
+        description: 'Phase difference between horizontal and vertical axes',
+        mathMeaning: '\\delta = \\phi_x - \\phi_y',
+        geometricRole: 'Opens and inflates the 2D figure-8 clover aperture',
+        objectiveHint: 'Tune phase offset to δ = 1.57 rad (π/2) to open the 3 target portal rings.'
+      },
+      {
+        key: 'amplitude',
+        label: 'Aperture Radius (A)',
+        symbol: 'A',
+        min: 2.0,
+        max: 5.0,
+        step: 0.5,
+        defaultValue: 4.0,
+        description: 'Spatial radius scale of the Lissajous loop',
+        mathMeaning: 'r = \\sqrt{x^2 + y^2}',
+        geometricRole: 'Expands the outer perimeter to intercept perimeter portals',
+        objectiveHint: 'Set Amplitude to 4.0 to stretch the clover loop through all 3 portals.'
+      }
+    ],
+    targets: [
+      { id: 'portal_1', x: -2, y: -1, radius: 0.5, label: 'Portal Alpha' },
+      { id: 'portal_2', x: 0, y: 0, radius: 0.5, label: 'Portal Beta' },
+      { id: 'portal_3', x: 2, y: 1, radius: 0.5, label: 'Portal Gamma' }
+    ],
+    obstacles: [],
+    bounds: { minX: -6, maxX: 6, minY: -6, maxY: 6 },
+    curriculum: {
+      standard: 'Precalculus / AP Physics: Parametric Equations and Lissajous Figures',
+      standardName: 'Orthogonal Harmonic Motion & Lissajous Curves',
+      topicCategory: 'Parametric Equations',
+      intuition: 'When a particle undergoes independent harmonic motion along perpendicular axes, its path traces a Lissajous curve. The frequency ratio $\\frac{\\omega_x}{\\omega_y} = \\frac{3}{2}$ produces a knot with 3 horizontal lobes and 2 vertical lobes, while the phase difference $\\delta = \\frac{\\pi}{2}$ opens the loop wide.',
+      keyFormulaLatex: 'x(t) = A\\sin(\\omega_x t + \\delta), \\quad y(t) = A\\sin(\\omega_y t)',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Calibrate Frequency Ratio to 3:2',
+          mathExpression: '\\frac{\\omega_x}{\\omega_y} = \\frac{3.0}{2.0} = 1.5',
+          explanation: 'Creates a 3-lobed figure-8 clover trajectory.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Adjust Phase Offset to π/2',
+          mathExpression: '\\delta = \\frac{\\pi}{2} \\approx 1.57 \\text{ rad}',
+          explanation: 'Opens the degenerate line into an open 2D orbital ring.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Lock Orbital Radius',
+          mathExpression: 'A = 4.0',
+          explanation: 'Aligns the loop trajectory directly through the 3 spatial portal sensors.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: '\\omega_x : \\omega_y', name: 'Frequency Ratio', role: 'Ratio 3:2 defining the clover knot lobes', currentValueKey: 'frequency' },
+        { symbol: '\\delta', name: 'Phase Offset', role: 'Opens closed trajectory into circular loops', currentValueKey: 'phase' },
+        { symbol: 'A', name: 'Aperture Radius', role: 'Scales orbit size to reach portals', currentValueKey: 'amplitude' }
+      ]
+    },
+    hints: [
+      'The target portals require a 3:2 frequency ratio.',
+      'Set Horizontal Frequency ω_x = 3.0 and Vertical Frequency ω_y = 2.0.',
+      'Set Phase Offset δ to 1.57 rad (π/2) to open the clover knot loops through all 3 portals.'
+    ]
   }
 ];
 
@@ -1828,5 +2148,6 @@ export const SECTORS = [
   { id: 'parabola', code: 'S2', title: 'Kinetic Arcs', description: 'Algebra II: Vertex Form, Zeros, Parabolas & Trajectories', color: 'emerald', levels: ['s2_l1', 's2_l2', 's2_l3', 's2_l4'] },
   { id: 'matrix', code: 'S3', title: 'The Warp Matrix', description: 'Linear Algebra: 2D Basis Transformations, Shears, Rotations & Determinants', color: 'violet', levels: ['s3_l1', 's3_l2', 's3_l3', 's3_l4'] },
   { id: 'calculus', code: 'S4', title: 'The Tangent Blade', description: 'Calculus I: Secants, Power Rule, Critical Points & Inflections', color: 'amber', levels: ['s4_l1', 's4_l2', 's4_l3', 's4_l4'] },
-  { id: 'lattice', code: 'S5', title: 'The Cryptographic Vault', description: 'Discrete Math: Lattice Reduction, CVP & NIST Kyber / ML-KEM', color: 'rose', levels: ['s5_l1', 's5_l2', 's5_l3', 's5_l4'] }
+  { id: 'lattice', code: 'S5', title: 'The Cryptographic Vault', description: 'Discrete Math: Lattice Reduction, CVP & NIST Kyber / ML-KEM', color: 'rose', levels: ['s5_l1', 's5_l2', 's5_l3', 's5_l4'] },
+  { id: 'frequency', code: 'S6', title: 'The Harmonic Oscillator', description: 'Trigonometry & Wave Mechanics: Resonance, Superposition & Lissajous Portals', color: 'sky', levels: ['s6_l1', 's6_l2', 's6_l3'] }
 ];

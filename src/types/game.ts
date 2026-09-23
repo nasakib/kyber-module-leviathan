@@ -6,6 +6,7 @@ export type SectorId =
   | 'matrix' 
   | 'calculus' 
   | 'lattice'
+  | 'frequency'
   | 'kinetics'
   | 'warp'
   | 'tangent'
@@ -16,7 +17,8 @@ export type LevelType =
   | 'parabolic_arc'     // y = a(x-h)^2 + k, roots, focus
   | 'matrix_warp'       // 2x2 linear transformations, shear, rotation, det
   | 'tangent_blade'     // secants, tangent lines, derivatives, critical points
-  | 'lattice_cvp';      // discrete 2D lattice, reduction, noisy decryption
+  | 'lattice_cvp'       // discrete 2D lattice, reduction, noisy decryption
+  | 'frequency_wave';   // harmonic oscillations, resonance, phase cancellation, Lissajous
 
 export interface Vector2D {
   x: number;
@@ -180,6 +182,21 @@ export interface LevelDefinition {
   membranes?: SplineMembrane[];
   energyBudget?: EnergyBudget;
   hypothesis?: HypothesisQuestion;
+
+  // Wave & Oscilloscope Mechanics
+  waveMode?: 'resonance' | 'cancellation' | 'lissajous';
+  targetFrequency?: number;
+  tolerance?: number;
+  noiseWave?: {
+    amplitude: number;
+    frequency: number;
+    phase?: number;
+  };
+  targetRatio?: {
+    a: number;
+    b: number;
+    delta: number;
+  };
   
   // Boss Mechanics
   isBossLevel?: boolean;

@@ -122,10 +122,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center text-slate-950 font-bold text-lg shadow-lg">
-                    {profile?.displayName.charAt(0).toUpperCase() || 'P'}
+                    {profile?.displayName?.charAt(0).toUpperCase() || profile?.display_name?.charAt(0).toUpperCase() || 'P'}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-100 text-base">{profile?.displayName}</h4>
+                    <h4 className="font-bold text-slate-100 text-base">{profile?.displayName || profile?.display_name || 'Cadet'}</h4>
                     <p className="text-xs text-slate-400">{user.email}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-[10px] uppercase px-2 py-0.5 rounded font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">

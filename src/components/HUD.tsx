@@ -15,6 +15,8 @@ import {
   User,
   Cloud,
   CloudOff,
+  Sliders,
+  Activity,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -36,6 +38,8 @@ interface HUDProps {
   isCloudConnected: boolean;
   userDisplayName?: string;
   userRole?: 'student' | 'teacher';
+  userTier?: 'cadet' | 'operator' | 'theorist';
+  onOpenDiagnostic?: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -57,6 +61,8 @@ export const HUD: React.FC<HUDProps> = ({
   isCloudConnected,
   userDisplayName,
   userRole,
+  userTier = 'cadet',
+  onOpenDiagnostic,
 }) => {
   // Calculate total stars earned
   const totalStars = Object.values(progress).reduce((acc, p) => acc + (p.stars || 0), 0);
@@ -78,6 +84,27 @@ export const HUD: React.FC<HUDProps> = ({
               <span className="text-[9px] text-cyan-400 font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 font-semibold">
                 The Coordinate Engine
               </span>
+              {onOpenDiagnostic && (
+                <button
+                  onClick={onOpenDiagnostic}
+                  className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[9px] font-mono font-bold tracking-wider transition-colors"
+                  title="Calibrate Diagnostic Tier & Sensory Lexicon"
+                >
+                  <Activity className="w-2.5 h-2.5 text-cyan-400 animate-pulse" />
+                  <span className="text-slate-400">RANK:</span>
+                  <span
+                    className={
+                      userTier === 'theorist'
+                        ? 'text-purple-400'
+                        : userTier === 'operator'
+                        ? 'text-cyan-400'
+                        : 'text-amber-400'
+                    }
+                  >
+                    {userTier.toUpperCase()}
+                  </span>
+                </button>
+              )}
             </div>
 
             {appMode === 'puzzle' ? (
@@ -150,6 +177,18 @@ export const HUD: React.FC<HUDProps> = ({
             <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
             <span className="hidden sm:inline">Classroom</span>
           </button>
+
+          {/* Calibrate Sensors / Diagnostic Button */}
+          {onOpenDiagnostic && (
+            <button
+              onClick={onOpenDiagnostic}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono transition-colors"
+              title="Calibrate Sensors & Diagnostic Tier"
+            >
+              <Sliders className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Calibrate</span>
+            </button>
+          )}
 
           {/* Star Counter */}
           <div className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold shadow-inner">

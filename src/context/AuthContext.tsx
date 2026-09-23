@@ -1,19 +1,46 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
-import { UserProfile, UserRole } from '../types/cloud';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { PlayerTier } from '../utils/jargonDictionary';
+import { syncProfile, UserProfileData } from '../services/cloudService';
+import { soundEngine } from '../utils/audio';
+
+const LOCAL_PROFILE_STORAGE = 'vectorforge_profile_store_v2';
 
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;
+  profile: UserProfileData;
   session: Session | null;
   isLoading: boolean;
   isConfigured: boolean;
+  updateTier: (tier: PlayerTier) => Promise<void>;
+  completeDiagnostic: (tier: PlayerTier) => Promise<void>;
+  unlockTerm: (termKey: string) => Promise<void>;
+  updateStarsTotal: (stars: number) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>;
-  signUpWithEmail: (email: string, password: string, displayName: string, role: UserRole) => Promise<{ error?: string }>;
+  signUpWithEmail: (email: string, password: string, displayName: string, role?: 'student' | 'teacher') => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: string }>;
-  refreshProfile: () => Promise<void>;
+}
+
+const DEFAULT_PROFILE: UserProfileData = {
+  id: 'guest_' + Math.random().toString(36).substring(2, 9),
+  display_name: 'Cadet Pilot',
+  tier: 'cadet',
+  diagnostic_completed: false,
+  unlocked_terms: [],
+  stars_total: 0,
+};
+
+function getLocalProfile(): UserProfileData {
+  try {
+    const saved = localStorage.getItem(LOCAL_PROFILE_STORAGE);
+    if (saved) {
+      return { ...DEFAULT_PROFILE, ...JSON.parse(saved) };
+    }
+  } catch {
+    // Ignore storage parse error
+  }
+  return DEFAULT_PROFILE;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,191 +48,166 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfileData>(getLocalProfile());
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const isConfigured = isSupabaseConfigured();
 
-  const fetchProfile = useCallback(async (userId: string, email?: string): Promise<UserProfile | null> => {
-    const supabase = getSupabase();
-    if (!supabase) return null;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.warn('VectorForge: Could not fetch user profile:', error.message);
-      }
-
-      if (data) {
-        return {
-          id: data.id,
-          email: data.email || email,
-          displayName: data.display_name || 'Pilot',
-          avatarUrl: data.avatar_url,
-          role: data.role || 'student',
-          createdAt: data.created_at,
-        };
-      }
-
-      // If profile record doesn't exist yet, construct default
-      return {
-        id: userId,
-        email: email || '',
-        displayName: email ? email.split('@')[0] : 'Pilot',
-        role: 'student',
-        createdAt: new Date().toISOString(),
-      };
-    } catch (err) {
-      console.warn('VectorForge: Profile fetch exception:', err);
-      return null;
-    }
-  }, []);
-
-  const refreshProfile = useCallback(async () => {
-    if (user) {
-      const p = await fetchProfile(user.id, user.email);
-      setProfile(p);
-    }
-  }, [user, fetchProfile]);
-
+  // Sync profile locally whenever it changes
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
+    try {
+      localStorage.setItem(LOCAL_PROFILE_STORAGE, JSON.stringify(profile));
+    } catch {
+      // Ignore storage error
+    }
+  }, [profile]);
+
+  // Load and initialize Supabase Auth (with automatic anonymous sign-in)
+  useEffect(() => {
+    const client = supabase;
+    if (!client) {
       setIsLoading(false);
       return;
     }
 
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email).then(setProfile);
-      }
-      setIsLoading(false);
-    });
+    const initAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await client.auth.getSession();
 
-    // 2. Auth State Listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        if (currentSession?.user) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          // Sync profile from cloud
+          const updated = await syncProfile({
+            ...profile,
+            id: currentSession.user.id,
+            display_name: currentSession.user.user_metadata?.display_name || profile.display_name,
+            displayName: currentSession.user.user_metadata?.display_name || profile.display_name,
+            role: currentSession.user.user_metadata?.role || profile.role || 'student',
+          });
+          setProfile(updated);
+        } else {
+          // Automatic Anonymous Sign-in for seamless cloud participation
+          const { data: anonData, error: anonErr } = await client.auth.signInAnonymously();
+          if (!anonErr && anonData.user) {
+            setUser(anonData.user);
+            setSession(anonData.session);
+            const updated = await syncProfile({
+              ...profile,
+              id: anonData.user.id,
+              display_name: `Cadet_${anonData.user.id.substring(0, 6)}`,
+              displayName: `Cadet_${anonData.user.id.substring(0, 6)}`,
+              role: 'student',
+            });
+            setProfile(updated);
+          }
+        }
+      } catch (err) {
+        console.warn('VectorForge: Anonymous auth fallback:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        const p = await fetchProfile(newSession.user.id, newSession.user.email);
-        setProfile(p);
-      } else {
-        setProfile(null);
+        const updated = await syncProfile({
+          ...profile,
+          id: newSession.user.id,
+          display_name: newSession.user.user_metadata?.display_name || profile.display_name,
+          displayName: newSession.user.user_metadata?.display_name || profile.display_name,
+          role: newSession.user.user_metadata?.role || profile.role || 'student',
+        });
+        setProfile(updated);
       }
-      setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
+
+  const updateTier = useCallback(async (tier: PlayerTier) => {
+    setProfile((prev) => {
+      const next = { ...prev, tier };
+      syncProfile(next);
+      return next;
+    });
+  }, []);
+
+  const completeDiagnostic = useCallback(async (tier: PlayerTier) => {
+    setProfile((prev) => {
+      const next: UserProfileData = {
+        ...prev,
+        tier,
+        diagnostic_completed: true,
+      };
+      syncProfile(next);
+      return next;
+    });
+    soundEngine.playAcademicPromotion();
+  }, []);
+
+  const unlockTerm = useCallback(async (termKey: string) => {
+    const norm = termKey.toLowerCase();
+    setProfile((prev) => {
+      if (prev.unlocked_terms.includes(norm)) return prev;
+      soundEngine.playAcademicPromotion();
+      const next: UserProfileData = {
+        ...prev,
+        unlocked_terms: [...prev.unlocked_terms, norm],
+      };
+      syncProfile(next);
+      return next;
+    });
+  }, []);
+
+  const updateStarsTotal = useCallback(async (stars: number) => {
+    setProfile((prev) => {
+      const next: UserProfileData = {
+        ...prev,
+        stars_total: stars,
+      };
+      syncProfile(next);
+      return next;
+    });
+  }, []);
 
   const signInWithEmail = async (email: string, password: string): Promise<{ error?: string }> => {
-    const supabase = getSupabase();
     if (!supabase) {
-      return { error: 'Supabase cloud is not configured. Running in offline mode.' };
+      return { error: 'Cloud offline' };
     }
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        return { error: error.message };
-      }
-      return {};
-    } catch (err: unknown) {
-      return { error: err instanceof Error ? err.message : 'Login failed' };
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return {};
   };
 
   const signUpWithEmail = async (
     email: string,
     password: string,
     displayName: string,
-    role: UserRole
+    role: 'student' | 'teacher' = 'student'
   ): Promise<{ error?: string }> => {
-    const supabase = getSupabase();
     if (!supabase) {
-      return { error: 'Supabase cloud is not configured. Running in offline mode.' };
+      return { error: 'Cloud offline' };
     }
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: displayName,
-            role,
-          },
-        },
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      // If user was created immediately and has an ID, upsert profile directly
-      if (data.user) {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          email,
-          display_name: displayName,
-          role,
-          updated_at: new Date().toISOString(),
-        });
-      }
-
-      return {};
-    } catch (err: unknown) {
-      return { error: err instanceof Error ? err.message : 'Registration failed' };
-    }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName, role } },
+    });
+    if (error) return { error: error.message };
+    return {};
   };
 
   const signOut = async () => {
-    const supabase = getSupabase();
     if (supabase) {
       await supabase.auth.signOut();
     }
     setUser(null);
     setSession(null);
-    setProfile(null);
-  };
-
-  const updateProfile = async (updates: Partial<UserProfile>): Promise<{ error?: string }> => {
-    const supabase = getSupabase();
-    if (!supabase || !user) {
-      return { error: 'Not authenticated' };
-    }
-
-    try {
-      const dbUpdates: Record<string, unknown> = {
-        updated_at: new Date().toISOString(),
-      };
-      if (updates.displayName !== undefined) dbUpdates.display_name = updates.displayName;
-      if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
-      if (updates.role !== undefined) dbUpdates.role = updates.role;
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(dbUpdates)
-        .eq('id', user.id);
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
-      return {};
-    } catch (err: unknown) {
-      return { error: err instanceof Error ? err.message : 'Failed to update profile' };
-    }
   };
 
   return (
@@ -215,12 +217,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile,
         session,
         isLoading,
-        isConfigured,
+        isConfigured: isSupabaseConfigured,
+        updateTier,
+        completeDiagnostic,
+        unlockTerm,
+        updateStarsTotal,
         signInWithEmail,
         signUpWithEmail,
         signOut,
-        updateProfile,
-        refreshProfile,
       }}
     >
       {children}

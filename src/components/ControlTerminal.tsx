@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { LevelDefinition } from '../types/game';
-import { Play, RotateCcw, Lightbulb, Minus, Plus, Target, CheckCircle2, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { Play, RotateCcw, Lightbulb, Minus, Plus, Target, CheckCircle2, ChevronDown, ChevronUp, Zap, Sliders, Radio } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 import { MathView, MathText } from './MathView';
 import { EnergyBudgetMeter } from './EnergyBudgetMeter';
+import { SynthesizerConsole } from './controls/SynthesizerConsole';
 
 interface ControlTerminalProps {
   level: LevelDefinition;
@@ -37,6 +38,7 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
   totalTargets,
 }) => {
   const [showDetailedGuide, setShowDetailedGuide] = useState<boolean>(true);
+  const [controlMode, setControlMode] = useState<'tactile' | 'sliders'>('tactile');
 
   // Compute formatted live formula LaTeX string
   const getFormulaDisplay = (): string => {
@@ -78,6 +80,17 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
       const c1 = params.c1 ?? 0;
       const c2 = params.c2 ?? 0;
       return `s = ${c1}\\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + ${c2}\\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} ${2 * c1 + c2} \\\\ ${c1 + c2} \\end{bmatrix}`;
+    }
+    if (level.type === 'frequency_wave' || level.sectorId === 'frequency') {
+      const A = params.amplitude ?? 1;
+      const omega = params.frequency ?? 1;
+      const phi = params.phase ?? 0;
+      if (level.waveMode === 'lissajous') {
+        const wy = params.omega_y ?? 2;
+        return `x(t) = ${A.toFixed(1)}\\sin(${omega.toFixed(1)}t + ${phi.toFixed(2)}) \\quad y(t) = ${A.toFixed(1)}\\sin(${wy.toFixed(1)}t)`;
+      }
+      const sign = phi >= 0 ? '+' : '-';
+      return `y(t) = ${A.toFixed(2)}\\sin\\left(${omega.toFixed(2)}t ${sign} ${Math.abs(phi).toFixed(2)}\\right)`;
     }
     return '';
   };
@@ -162,8 +175,46 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
         <EnergyBudgetMeter budget={level.energyBudget} params={params} />
       )}
 
-      {/* Control Sliders and Fine-Tuning Operators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Console Mode Selector: Skeuomorphic Analog Dials vs Precision Sliders */}
+      <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <button
+            onClick={() => setControlMode('tactile')}
+            className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+              controlMode === 'tactile'
+                ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5" />
+            <span>Analog Hardware Console</span>
+          </button>
+          <button
+            onClick={() => setControlMode('sliders')}
+            className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+              controlMode === 'sliders'
+                ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Precision Sliders</span>
+          </button>
+        </div>
+      </div>
+
+      {controlMode === 'tactile' ? (
+        <SynthesizerConsole
+          level={level}
+          params={params}
+          onParamChange={onParamChange}
+          onFire={onFire}
+          onReset={onReset}
+          isFiring={isFiring}
+        />
+      ) : (
+        /* Control Sliders and Fine-Tuning Operators */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {level.paramControls.map((ctrl) => {
           const val = params[ctrl.key] ?? ctrl.defaultValue;
           const alignment = getAlignmentStatus(ctrl.key);
@@ -282,7 +333,8 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Action Command Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80">

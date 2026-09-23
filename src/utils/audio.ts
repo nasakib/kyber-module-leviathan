@@ -229,6 +229,125 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.15);
   }
+
+  // 1. Rotary dial detent tick: crisp 1200Hz mechanical impulse
+  public playDetentTick() {
+    if (!this.ctx || this.isMuted) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.025);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.025);
+  }
+
+  // 2. Heavy metal rocker switch click: dual-frequency snap (120Hz click + 2200Hz metallic release)
+  public playSwitchClick() {
+    if (!this.ctx || this.isMuted) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    // Low thud
+    const oscLow = this.ctx.createOscillator();
+    const gainLow = this.ctx.createGain();
+    oscLow.type = 'square';
+    oscLow.frequency.setValueAtTime(120, now);
+    oscLow.frequency.exponentialRampToValueAtTime(40, now + 0.04);
+    gainLow.gain.setValueAtTime(0.2, now);
+    gainLow.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    oscLow.connect(gainLow);
+    gainLow.connect(this.ctx.destination);
+    oscLow.start(now);
+    oscLow.stop(now + 0.04);
+
+    // High metallic ping
+    const oscHigh = this.ctx.createOscillator();
+    const gainHigh = this.ctx.createGain();
+    oscHigh.type = 'triangle';
+    oscHigh.frequency.setValueAtTime(2200, now);
+    oscHigh.frequency.exponentialRampToValueAtTime(800, now + 0.06);
+    gainHigh.gain.setValueAtTime(0.12, now);
+    gainHigh.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    oscHigh.connect(gainHigh);
+    gainHigh.connect(this.ctx.destination);
+    oscHigh.start(now);
+    oscHigh.stop(now + 0.06);
+  }
+
+  // 3. Acoustic resonance hum: clarifies as deltaOmega -> 0
+  public playResonanceHum(deltaOmega: number) {
+    if (!this.ctx || this.isMuted) return;
+    this.init();
+
+    const absDiff = Math.abs(deltaOmega);
+    const closeness = Math.max(0, 1 - Math.min(absDiff / 4, 1)); // 0 to 1
+    const baseFreq = 220; // A3
+    const detune = absDiff * 15; // detuning in Hz
+
+    const now = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(baseFreq, now);
+
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(baseFreq + detune, now);
+
+    const volume = 0.02 + closeness * 0.12;
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.15);
+    osc2.stop(now + 0.15);
+  }
+
+  // 4. Academic promotion: ascending synth harp glissando
+  public playAcademicPromotion() {
+    if (!this.ctx || this.isMuted) return;
+    this.init();
+
+    const notes = [440, 554.37, 659.25, 830.61, 880, 1108.73, 1318.51, 1760]; // A major 9th glissando
+    const now = this.ctx.currentTime;
+
+    notes.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const noteTime = now + idx * 0.06;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, noteTime);
+
+      gain.gain.setValueAtTime(0.18, noteTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.5);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(noteTime);
+      osc.stop(noteTime + 0.5);
+    });
+  }
 }
 
 export const soundEngine = new SoundEngine();
