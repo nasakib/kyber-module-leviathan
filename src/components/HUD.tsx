@@ -12,6 +12,8 @@ import {
   Volume2,
   VolumeX,
   Lightbulb,
+  HelpCircle,
+  PlayCircle,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -21,6 +23,8 @@ interface HUDProps {
   onUseWeapon: (weaponId: Weapon['id']) => void;
   onBetaChange: (newBeta: number) => void;
   onToggleAudio: () => void;
+  onToggleFlowMode: () => void;
+  onOpenInstructions: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -30,6 +34,8 @@ export const HUD: React.FC<HUDProps> = ({
   onUseWeapon,
   onBetaChange,
   onToggleAudio,
+  onToggleFlowMode,
+  onOpenInstructions,
 }) => {
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -55,18 +61,37 @@ export const HUD: React.FC<HUDProps> = ({
 
   return (
     <div className="flex flex-col gap-2 font-mono">
-      {/* 1. Tactical Guidance Bar (Novice Friendly Tip) */}
+      {/* 1. Tactical Guidance & Flow Assist Bar */}
       <div className="bg-slate-900/90 border border-emerald-500/40 rounded-lg px-3 py-1.5 backdrop-blur flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-2 text-xs">
           <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 animate-bounce" />
           <span className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">TACTICAL ADVICE:</span>
           <span className="text-slate-200 text-xs font-semibold">{gameState.tacticalHint}</span>
         </div>
-        {gameState.comboCount > 1 && (
-          <div className="text-xs font-bold text-emerald-400 animate-pulse bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-            {gameState.comboCount}x COMBO ACTIVE!
-          </div>
-        )}
+
+        <div className="flex items-center gap-2">
+          {/* Guided Flow Mode Toggle */}
+          <button
+            onClick={onToggleFlowMode}
+            className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded border transition ${
+              gameState.isFlowMode
+                ? 'bg-emerald-950 border-emerald-400 text-emerald-300 shadow-md glow-emerald'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <PlayCircle className={`w-3.5 h-3.5 ${gameState.isFlowMode ? 'text-emerald-400 animate-spin' : ''}`} />
+            <span>FLOW MODE: {gameState.isFlowMode ? 'ACTIVE' : 'OFF'}</span>
+          </button>
+
+          {/* How to Play Button */}
+          <button
+            onClick={onOpenInstructions}
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+            <span>HOW TO PLAY</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Top Bar: Status Gauges */}
@@ -163,6 +188,7 @@ export const HUD: React.FC<HUDProps> = ({
             const isVisor = w.id === 'visor';
             const isActiveVisor = isVisor && gameState.gramSchmidtVisor;
             const isOnCooldown = w.currentCooldown > 0;
+            const isSuggested = gameState.isFlowMode && gameState.suggestedAction === w.id;
 
             return (
               <button
@@ -170,7 +196,9 @@ export const HUD: React.FC<HUDProps> = ({
                 onClick={() => onUseWeapon(w.id)}
                 disabled={isOnCooldown || gameState.isGameOver}
                 className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold transition-all duration-150 ${
-                  isActiveVisor
+                  isSuggested
+                    ? 'bg-emerald-950 border-emerald-400 text-emerald-300 shadow-xl shadow-emerald-500/40 glow-emerald scale-105'
+                    : isActiveVisor
                     ? 'bg-amber-950/80 border-amber-400 text-amber-300 shadow-lg shadow-amber-500/20'
                     : isOnCooldown
                     ? 'bg-slate-950 border-slate-800 text-slate-600 cursor-not-allowed'
@@ -192,12 +220,11 @@ export const HUD: React.FC<HUDProps> = ({
                   </span>
                 </div>
 
-                {/* Beginner Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-52 p-2.5 bg-slate-950 border border-cyan-500/50 text-slate-300 text-[10px] rounded-lg shadow-2xl z-50 pointer-events-none">
-                  <p className="font-bold text-cyan-400 mb-0.5">{w.simpleName} ({w.name})</p>
-                  <p className="text-emerald-300 mb-1 font-semibold">{w.simpleGuide}</p>
-                  <p className="text-slate-400 text-[9.5px] border-t border-slate-800 pt-1">{w.description}</p>
-                </div>
+                {isSuggested && (
+                  <span className="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 font-bold text-[9px] px-1.5 py-0.5 rounded-full animate-bounce">
+                    PRESS [{w.shortcut}]
+                  </span>
+                )}
               </button>
             );
           })}

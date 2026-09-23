@@ -21,7 +21,8 @@ import { HUD } from './components/HUD';
 import { CombatLog } from './components/CombatLog';
 import { LevelSelect } from './components/LevelSelect';
 import { MathChallengeCard } from './components/MathChallengeCard';
-import { Trophy, Cpu } from 'lucide-react';
+import { OnboardingModal } from './components/OnboardingModal';
+import { Cpu, Trophy } from 'lucide-react';
 
 const GAME_LEVELS: GameLevel[] = [
   {
@@ -204,6 +205,10 @@ const INITIAL_WEAPONS: Weapon[] = [
 
 export function App() {
   const [gameState, setGameState] = useState<GameState>({
+    isFlowMode: true,
+    showInstructionsModal: false,
+    tutorialStep: 1,
+    suggestedAction: 'kannan',
     activeLevel: 1,
     unlockedLevels: [1, 2, 3, 4],
     levelProgress: { 1: false, 2: false, 3: false, 4: false },
@@ -221,7 +226,7 @@ export function App() {
     gramSchmidtVisor: false,
     comboCount: 0,
     screenShake: 0,
-    tacticalHint: "Level 1: Solve the Net Force Vector Challenge to unlock weapon power boost!",
+    tacticalHint: "Guided Flow Active: Press highlighted key [1] Anchor Lock!",
     lovaszAngle: 0,
     lovaszThresholdSatisfied: false,
     isGameOver: false,
@@ -235,7 +240,7 @@ export function App() {
   const [logs, setLogs] = useState<CombatLogEntry[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [projectiles, setProjectiles] = useState<BossProjectile[]>([]);
+  const [projectiles] = useState<BossProjectile[]>([]);
   const [parryRing, setParryRing] = useState<ParryRing | null>({
     id: 'ring-1',
     radius: 180,
@@ -270,7 +275,7 @@ export function App() {
   );
 
   useEffect(() => {
-    addLog("STEM CURRICULUM INITIALIZED: STAGE 1 ALGEBRA & VECTOR PHYSICS", "warning", "Welcome! Master Algebra, Geometry, Calculus & Physics to defeat Leviathan!");
+    addLog("GUIDED FLOW MODE ACTIVE: FOLLOW GLOWING KEYBIND SUGGESTIONS FOR EFFORTLESS PLAY", "warning", "Guided Flow Mode enabled: follow highlighted buttons to play!");
   }, [addLog]);
 
   const initAudioCtx = useCallback(() => {
@@ -316,7 +321,7 @@ export function App() {
     setParticles((prev) => [...prev, ...newParticles]);
   };
 
-  // Main tick update loop
+  // Main tick loop
   const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
     if (gameState.isGameOver || gameState.isVictory) return;
@@ -337,30 +342,21 @@ export function App() {
         const newAngle = (prev.lovaszAngle + dt * 1.8) % (Math.PI * 2);
         const thresholdMet = Math.abs(Math.sin(newAngle * 2)) > 0.85;
 
-        // Level 4 Boss Phase transitions
-        let newPhase = prev.bossPhase;
-        let hint = prev.tacticalHint;
-
-        if (prev.activeLevel === 4) {
-          const hpPercent = (prev.bossHp / prev.maxBossHp) * 100;
-          if (hpPercent <= 10 && prev.bossPhase < 4) {
-            newPhase = 4;
-            hint = BOSS_PHASES[4].tacticalTip;
-          } else if (hpPercent <= 40 && hpPercent > 10 && prev.bossPhase < 3) {
-            newPhase = 3;
-            hint = BOSS_PHASES[3].tacticalTip;
-          } else if (hpPercent <= 75 && hpPercent > 40 && prev.bossPhase < 2) {
-            newPhase = 2;
-            hint = BOSS_PHASES[2].tacticalTip;
-          }
+        // Determine suggested action for Guided Flow Mode
+        let suggested: WeaponId | null = 'kannan';
+        if (prev.memoryHeat > 70) {
+          suggested = 'coolant';
+        } else if (prev.activeLevel === 4 && prev.bossPhase === 2 && thresholdMet) {
+          suggested = 'lll';
+        } else if (prev.activeLevel === 4 && prev.bossPhase === 3) {
+          suggested = 'bkz';
         }
 
         return {
           ...prev,
           lovaszAngle: newAngle,
           lovaszThresholdSatisfied: thresholdMet,
-          bossPhase: newPhase,
-          tacticalHint: hint,
+          suggestedAction: suggested,
           screenShake: Math.max(0, prev.screenShake - dt * 8),
           memoryHeat: Math.max(0, prev.memoryHeat - dt * 3),
         };
@@ -382,47 +378,7 @@ export function App() {
         });
       }
 
-      // Boss attacks in Level 4
-      if (gameState.activeLevel === 4 && Math.random() < 0.04) {
-        setProjectiles((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(),
-            x: window.innerWidth / 2 + (Math.random() - 0.5) * 100,
-            y: window.innerHeight / 2 - 100,
-            targetX: window.innerWidth / 2 + (Math.random() - 0.5) * 300,
-            targetY: window.innerHeight - 50,
-            speed: 4 + Math.random() * 3,
-            damage: 10,
-            type: 'binomial',
-            color: '#f43f5e',
-            radius: 6,
-          },
-        ]);
-      }
-
-      // Update Projectiles
-      setProjectiles((prev) => {
-        const updated: BossProjectile[] = [];
-        prev.forEach((p) => {
-          const dx = p.targetX - p.x;
-          const dy = p.targetY - p.y;
-          const dist = Math.hypot(dx, dy);
-
-          if (dist < 10) {
-            setGameState((state) => {
-              const nextHp = state.playerHp - p.damage;
-              if (nextHp <= 0) return { ...state, playerHp: 0, isGameOver: true };
-              return { ...state, playerHp: nextHp, screenShake: 3 };
-            });
-          } else {
-            updated.push({ ...p, x: p.x + (dx / dist) * p.speed, y: p.y + (dy / dist) * p.speed });
-          }
-        });
-        return updated;
-      });
-
-      // Update Particles & Floating Texts
+      // Projectiles & Particles
       setParticles((prev) => prev.map((p) => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, life: p.life - 1 })).filter((p) => p.life > 0));
       setFloatingTexts((prev) => prev.map((ft) => ({ ...ft, y: ft.y - 0.8, life: ft.life - 1 })).filter((ft) => ft.life > 0));
 
@@ -443,16 +399,14 @@ export function App() {
     addLog(`SWITCHED TO STAGE ${levelId}: ${GAME_LEVELS.find((l) => l.id === levelId)?.title}`, "phase_change");
   };
 
-  // Math Puzzle Solve Handler
   const handleSolvePuzzle = () => {
     soundEngine.playParry(true);
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
-
     spawnParticles(centerX, centerY, '#34d399', 50);
     spawnFloatingText(`✨ PUZZLE SOLVED! +STAGE BOOST`, centerX, centerY, '#34d399', 22);
 
-    addLog(`STEM CHALLENGE COMPLETED FOR STAGE ${gameState.activeLevel}!`, "critical", "Concept verified! Weaponry & system integrity boosted!");
+    addLog(`STEM CHALLENGE COMPLETED FOR STAGE ${gameState.activeLevel}!`, "critical", "Concept verified!");
 
     setGameState((prev) => ({
       ...prev,
@@ -532,7 +486,7 @@ export function App() {
             KYBER: <span className="text-cyan-400">THE MODULE LEVIATHAN</span>
           </h1>
           <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400 font-mono">
-            STEM Curriculum: Algebra • Geometry • Calculus • Physics • Cryptanalysis
+            Guided STEM Onboarding Engine
           </span>
         </div>
       </header>
@@ -554,7 +508,6 @@ export function App() {
             onTargetCoreClick={handleTargetCoreClick}
           />
 
-          {/* Interactive STEM Math Challenge Card */}
           {gameState.activePuzzle && (
             <div className="absolute bottom-3 left-3 right-3 max-w-lg z-40">
               <MathChallengeCard puzzle={gameState.activePuzzle} onSolve={handleSolvePuzzle} />
@@ -579,8 +532,18 @@ export function App() {
             soundEngine.setMuted(nextMuted);
             setGameState((prev) => ({ ...prev, audioMuted: nextMuted }));
           }}
+          onToggleFlowMode={() => setGameState((prev) => ({ ...prev, isFlowMode: !prev.isFlowMode }))}
+          onOpenInstructions={() => setGameState((prev) => ({ ...prev, showInstructionsModal: true }))}
         />
       </footer>
+
+      {/* Onboarding Instructions Modal */}
+      {gameState.showInstructionsModal && (
+        <OnboardingModal
+          onClose={() => setGameState((prev) => ({ ...prev, showInstructionsModal: false }))}
+          onEnableFlowMode={() => setGameState((prev) => ({ ...prev, isFlowMode: true }))}
+        />
+      )}
 
       {gameState.isVictory && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">

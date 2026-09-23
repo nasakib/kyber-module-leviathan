@@ -4,7 +4,7 @@ export interface GameLevel {
   id: LevelId;
   title: string;
   subtitle: string;
-  category: string; // e.g. "ALGEBRA & VECTOR PHYSICS"
+  category: string;
   description: string;
   learningObjectives: string[];
   unlocked: boolean;
@@ -113,27 +113,33 @@ export interface CombatLogEntry {
 }
 
 export interface GameState {
+  // Flow & Tutorial Mode
+  isFlowMode: boolean; // Autonomous guided flow assist
+  showInstructionsModal: boolean;
+  tutorialStep: number;
+  suggestedAction: WeaponId | null;
+
   // Level Progression
   activeLevel: LevelId;
   unlockedLevels: LevelId[];
-  levelProgress: Record<LevelId, boolean>; // completed levels
+  levelProgress: Record<LevelId, boolean>;
   
   // Active Interactive Puzzle
   activePuzzle: MathPhysicsPuzzle | null;
   
   // Boss
-  bossHp: number; // Starts at 768 in Boss level
+  bossHp: number;
   maxBossHp: number;
   bossPhase: BossPhaseId;
   
   // Player
-  playerHp: number; // Starts at 100
+  playerHp: number;
   maxPlayerHp: number;
   memoryHeat: number;
   bkzBeta: number;
   gramSchmidtVisor: boolean;
   
-  // Level 1-3 Vector interactive controls
+  // Vectors
   vector1: Vector2D;
   vector2: Vector2D;
   targetVector: Vector2D;
