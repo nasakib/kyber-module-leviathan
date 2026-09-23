@@ -13,6 +13,13 @@
     );
     background-size: 100% 4px;
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
 }
 
 /* Custom glow animations */
@@ -40,3 +47,38 @@
 .glow-emerald { animation: pulse-emerald 2s infinite; }
 .glow-amber { animation: pulse-amber 2s infinite; }
 .glow-rose { animation: pulse-rose 1.5s infinite; }
+
+/* Universal scrollbar removal across all elements & browsers */
+html, body, #root, *, *::before, *::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+/* Ensure math formulas and typography wrap naturally without causing overflow */
+.katex-display {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  max-width: 100% !important;
+  margin: 0.5em 0 !important;
+}
+
+.katex {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+.katex-html {
+  white-space: normal !important;
+}
+
+.katex-display > .katex {
+  text-align: center;
+  white-space: normal !important;
+}

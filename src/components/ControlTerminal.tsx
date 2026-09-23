@@ -128,7 +128,7 @@ export const ControlTerminal: React.FC<ControlTerminalProps> = ({
         </div>
 
         {/* Live Symbolic Formula Badge with KaTeX */}
-        <div className="px-4 py-2 rounded-lg bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-sm sm:text-base font-semibold shadow-inner flex items-center overflow-x-auto max-w-full">
+        <div className="px-4 py-2 rounded-lg bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-sm sm:text-base font-semibold shadow-inner flex items-center flex-wrap break-words max-w-full">
           <MathView math={getFormulaDisplay()} />
         </div>
 

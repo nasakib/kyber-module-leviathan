@@ -91,7 +91,7 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 font-mono text-sm">
+        <div className="p-5 sm:p-6 overflow-y-auto no-scrollbar space-y-5 flex-1 font-mono text-sm">
           {/* Key Symbolic Formula Showcase Banner */}
           <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-950 to-slate-900 border border-cyan-500/30 rounded-xl text-center shadow-lg relative overflow-hidden">
             <div className="absolute top-2 left-3 flex items-center space-x-1.5 text-[10px] uppercase tracking-wider text-cyan-400 font-bold">
@@ -126,7 +126,7 @@ export const CurriculumCard: React.FC<CurriculumCardProps> = ({
                   </div>
 
                   {/* Symbolic KaTeX Equation */}
-                  <div className="pl-8 py-2 px-3 bg-slate-900/90 rounded-lg border border-slate-800 text-cyan-300 text-sm sm:text-base flex items-center overflow-x-auto">
+                  <div className="pl-8 py-2 px-3 bg-slate-900/90 rounded-lg border border-slate-800 text-cyan-300 text-sm sm:text-base flex items-center flex-wrap break-words">
                     <MathView math={step.mathExpression} displayMode={false} />
                   </div>
 

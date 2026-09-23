@@ -44,7 +44,7 @@ export const MathView: React.FC<MathViewProps> = ({
 
   return (
     <span
-      className={`inline-block overflow-x-auto max-w-full align-middle ${className}`}
+      className={`inline-block max-w-full align-middle break-words whitespace-normal ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

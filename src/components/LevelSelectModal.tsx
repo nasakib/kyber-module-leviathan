@@ -75,7 +75,7 @@ export const LevelSelectModal: React.FC<LevelSelectModalProps> = ({
         </div>
 
         {/* Sectors Grid */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 font-mono">
+        <div className="p-6 overflow-y-auto no-scrollbar space-y-6 flex-1 font-mono">
           {SECTORS.map((sector) => {
             const sectorLevels = ALL_LEVELS.filter((l) => l.sectorId === sector.id);
 
