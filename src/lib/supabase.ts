@@ -6,8 +6,8 @@ const STORAGE_CUSTOM_ANON_KEY = 'vectorforge_supabase_anon_key';
 function getInitialCredentials() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const metaEnv = (import.meta as any).env || {};
-  const envUrl = (metaEnv.VITE_SUPABASE_URL as string | undefined) || '';
-  const envKey = (metaEnv.VITE_SUPABASE_ANON_KEY as string | undefined) || '';
+  const envUrl = (metaEnv.VITE_SUPABASE_URL as string | undefined) || (metaEnv.NEXT_PUBLIC_SUPABASE_URL as string | undefined) || '';
+  const envKey = (metaEnv.VITE_SUPABASE_ANON_KEY as string | undefined) || (metaEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string | undefined) || (metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined) || '';
 
   let localUrl = '';
   let localKey = '';
