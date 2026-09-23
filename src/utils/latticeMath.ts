@@ -8,6 +8,17 @@ export const add = (v1: Vector2D, v2: Vector2D): Vector2D => ({ x: v1.x + v2.x, 
 export const sub = (v1: Vector2D, v2: Vector2D): Vector2D => ({ x: v1.x - v2.x, y: v1.y - v2.y });
 export const mul = (v: Vector2D, scalar: number): Vector2D => ({ x: v.x * scalar, y: v.y * scalar });
 export const det2D = (m: Matrix2D): number => Math.abs(m.b1.x * m.b2.y - m.b1.y * m.b2.x);
+
+export const isCollinear = (m: Matrix2D): boolean => {
+  const determinant = det2D(m);
+  return determinant < 1e-5;
+};
+
+export const sanitizeCoordinate = (val: number): number => {
+  if (isNaN(val) || !isFinite(val)) return 0;
+  return Math.max(-5000, Math.min(5000, val));
+};
+
 export const angleBetween = (v1: Vector2D, v2: Vector2D): number => {
   const cosTheta = dot(v1, v2) / (norm(v1) * norm(v2) || 1);
   const clampedCos = Math.max(-1, Math.min(1, cosTheta));
@@ -38,6 +49,25 @@ export const computeGramSchmidt = (b1: Vector2D, b2: Vector2D): GramSchmidtResul
   return { b1Star, b2Star, mu21 };
 };
 
+// Code / Script Generation Utilities
+export const generateSageMath = (m: Matrix2D, target?: Vector2D): string => {
+  const lines = [
+    `# SageMath Lattice Reduction (LLL) & CVP Script`,
+    `B = Matrix(ZZ, [[${Math.round(m.b1.x)}, ${Math.round(m.b1.y)}], [${Math.round(m.b2.x)}, ${Math.round(m.b2.y)}]])`,
+    `L = B.LLL(delta=0.75)`,
+    `print("Reduced Basis:", L)`,
+  ];
+  if (target) {
+    lines.push(`t = vector(ZZ, [${Math.round(target.x)}, ${Math.round(target.y)}])`);
+    lines.push(`print("Target Vector:", t)`);
+  }
+  return lines.join('\n');
+};
+
+export const generateLaTeXMatrix = (m: Matrix2D): string => {
+  return `\\begin{pmatrix} ${Math.round(m.b1.x)} & ${Math.round(m.b1.y)} \\\\ ${Math.round(m.b2.x)} & ${Math.round(m.b2.y)} \\end{pmatrix}`;
+};
+
 // Step-by-Step LLL Reduction & Babai CVP History Generator
 export const generateLatticeSolution = (
   initialB1: Vector2D,
@@ -46,8 +76,31 @@ export const generateLatticeSolution = (
   delta: number = 0.75
 ): SolverStep[] => {
   const steps: SolverStep[] = [];
-  let b1 = { ...initialB1 };
-  let b2 = { ...initialB2 };
+  const b1Sanitized = { x: sanitizeCoordinate(initialB1.x), y: sanitizeCoordinate(initialB1.y) };
+  const b2Sanitized = { x: sanitizeCoordinate(initialB2.x), y: sanitizeCoordinate(initialB2.y) };
+  const targetSanitized = { x: sanitizeCoordinate(target.x), y: sanitizeCoordinate(target.y) };
+
+  let b1 = { ...b1Sanitized };
+  let b2 = { ...b2Sanitized };
+
+  // Guardrail check: Collinear or zero vectors
+  if (isCollinear({ b1, b2 })) {
+    const gsEmpty = { b1Star: { ...b1 }, b2Star: { x: 0, y: 0 }, mu21: 0 };
+    steps.push({
+      stepIndex: 0,
+      action: 'initial',
+      title: 'Degenerate Basis Detected (det(L) ≈ 0)',
+      matrix: { b1: { ...b1 }, b2: { ...b2 } },
+      gsResult: gsEmpty,
+      mu: 0,
+      b1StarNormSq: normSq(b1),
+      b2StarNormSq: 0,
+      lovaszSatisfied: false,
+      explanation: 'Vectors are collinear or zero (det(L) < 10⁻⁵). They do not span a 2D lattice. Adjust coordinates so vectors are linearly independent.',
+      formula: '\\det(L) = |x_1 y_2 - y_1 x_2| = 0',
+    });
+    return steps;
+  }
 
   // Initial State Step
   let gs = computeGramSchmidt(b1, b2);
@@ -157,12 +210,12 @@ export const generateLatticeSolution = (
 
   // Babai's Nearest Plane CVP Algorithm step on target
   gs = computeGramSchmidt(b1, b2);
-  const c2 = Math.round(dot(target, gs.b2Star) / (normSq(gs.b2Star) || 1));
-  const t2 = sub(target, mul(b2, c2));
+  const c2 = Math.round(dot(targetSanitized, gs.b2Star) / (normSq(gs.b2Star) || 1));
+  const t2 = sub(targetSanitized, mul(b2, c2));
   const c1 = Math.round(dot(t2, gs.b1Star) / (normSq(gs.b1Star) || 1));
 
   const closestLatticePoint = add(mul(b1, c1), mul(b2, c2));
-  const errorVector = sub(target, closestLatticePoint);
+  const errorVector = sub(targetSanitized, closestLatticePoint);
 
   steps.push({
     stepIndex: stepIdx++,

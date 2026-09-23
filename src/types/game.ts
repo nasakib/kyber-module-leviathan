@@ -54,6 +54,7 @@ export interface AcademyChapter {
   targetValue: number;
   currentValue: number;
   unit: string;
+  hint: string;
 }
 
 export type Lane = -1 | 0 | 1;
@@ -167,6 +168,9 @@ export interface GameState {
   gateQuestion: string;
   gateOptions: string[];
   correctOptionIndex: number;
+  gateTimer: number; // 8 seconds countdown
+  gateHintUsed: boolean;
+  gateEliminatedOptions: number[];
 
   obstacles: RunnerObstacle[];
   powerups: RunnerPowerUp[];

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import {
   GameState,
   Matrix2D,
@@ -18,7 +19,7 @@ import { AcademyMode, ACADEMY_CHAPTERS } from './components/AcademyMode';
 import { SolverLab } from './components/SolverLab';
 import { ExplanatoryDrawer } from './components/ExplanatoryDrawer';
 import { OnboardingModal } from './components/OnboardingModal';
-import { Cpu, Trophy } from 'lucide-react';
+import { Cpu, Trophy, Volume2, ArrowRight, RotateCcw } from 'lucide-react';
 
 const INITIAL_MATRIX: Matrix2D = {
   b1: { x: 200, y: 195 },
@@ -60,6 +61,9 @@ export function App() {
       'Ignore the lattice and brute force 2^768 keys',
     ],
     correctOptionIndex: 0,
+    gateTimer: 8.0,
+    gateHintUsed: false,
+    gateEliminatedOptions: [],
 
     obstacles: [],
     powerups: [],
@@ -161,9 +165,14 @@ export function App() {
     setParticles((prev) => [...prev, ...newParticles]);
   };
 
-  // Keyboard Shortcuts (Mode Switcher & Solver Controls & Boss Runner Controls)
+  // Keyboard Shortcuts with browser scroll prevention (e.preventDefault)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
+      if (handledKeys.includes(e.key)) {
+        e.preventDefault();
+      }
+
       initAudioCtx();
 
       if (gameState.appMode === 'solver') {
@@ -175,7 +184,7 @@ export function App() {
           setGameState((prev) => ({ ...prev, currentStepIndex: Math.min(prev.solverSteps.length - 1, prev.currentStepIndex + 1) }));
         }
       } else if (gameState.appMode === 'boss') {
-        if (gameState.isGameOver || gameState.isVictory) return;
+        if (gameState.isGameOver || gameState.isVictory || gameState.isAnalysisGateActive) return;
 
         switch (e.key) {
           case 'ArrowLeft':
@@ -190,13 +199,16 @@ export function App() {
           case 'ArrowDown':
             setGameState((prev) => (prev.shipState !== 'sliding' ? { ...prev, shipY: -25, shipState: 'sliding' } : prev));
             break;
+          case ' ':
+            handleFireBlaster();
+            break;
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [initAudioCtx, gameState.appMode, gameState.isGameOver, gameState.isVictory]);
+  }, [initAudioCtx, gameState.appMode, gameState.isGameOver, gameState.isVictory, gameState.isAnalysisGateActive]);
 
   // Solver Lab Automated Playback Loop
   useEffect(() => {
@@ -214,22 +226,89 @@ export function App() {
     return () => clearInterval(interval);
   }, [gameState.appMode, gameState.isSolverPlaying, gameState.solverPlaybackSpeed]);
 
-  // Boss Runner Mode 60 FPS update tick loop
+  // Fire Blaster Action for Boss mode
+  const handleFireBlaster = () => {
+    soundEngine.playLaser();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    spawnParticles(centerX, centerY, '#38bdf8', 25);
+    spawnFloatingText(`💥 BLASTER BLAST! -40 DIM`, centerX, centerY, '#38bdf8', 20);
+
+    setGameState((prev) => {
+      const damage = 40;
+      const nextHp = Math.max(0, prev.bossHp - damage);
+
+      let isVictorious = false;
+      if (nextHp <= 0) {
+        isVictorious = true;
+        soundEngine.playExplosion();
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+      }
+
+      return {
+        ...prev,
+        bossHp: nextHp,
+        score: prev.score + 100,
+        isVictory: isVictorious,
+        screenShake: 3,
+      };
+    });
+
+    addLog("PARTICLE BLASTER FIRED! Lattice barrier damaged.", "player_action", "Blaster blast hit the Leviathan! (-40 Boss Entropy)");
+  };
+
+  // Boss Runner Mode 60 FPS update tick loop with Gate Countdown
   const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
-    if (gameState.appMode !== 'boss' || gameState.isGameOver || gameState.isVictory || gameState.isAnalysisGateActive) return;
+    if (gameState.appMode !== 'boss' || gameState.isGameOver || gameState.isVictory) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
 
+      // Handle Analysis Gate Checkpoint countdown
+      if (gameState.isAnalysisGateActive) {
+        setGameState((prev) => {
+          const nextTimer = prev.gateTimer - dt;
+          if (nextTimer <= 0) {
+            // Timeout penalty: 25 HP damage, auto-resume
+            soundEngine.playAlarm();
+            addLog("ANALYSIS GATE TIMEOUT: Shield took 25 damage, flight resumed.", "boss_attack");
+            const nextHp = Math.max(0, prev.playerHp - 25);
+            return {
+              ...prev,
+              gateTimer: 8.0,
+              isAnalysisGateActive: false,
+              playerHp: nextHp,
+              isGameOver: nextHp <= 0,
+            };
+          }
+          return { ...prev, gateTimer: nextTimer };
+        });
+        return;
+      }
+
+      // Normal flight update
       setGameState((prev) => {
         const nextDist = prev.distance + prev.speed * 2.5;
 
+        // Recover ship vertical position
+        let nextShipY = prev.shipY;
+        let nextShipState = prev.shipState;
+        if (prev.shipState === 'jumping') {
+          nextShipY = Math.max(0, prev.shipY - dt * 180);
+          if (nextShipY === 0) nextShipState = 'normal';
+        } else if (prev.shipState === 'sliding') {
+          nextShipY = Math.min(0, prev.shipY + dt * 80);
+          if (nextShipY === 0) nextShipState = 'normal';
+        }
+
         // Trigger Analysis Gate Checkpoint at distance 300, 600, 900
+        const intDist = Math.floor(nextDist);
         let triggerGate = false;
-        if (Math.floor(nextDist) === 300 || Math.floor(nextDist) === 600) {
+        if ((intDist === 300 || intDist === 600) && !prev.isAnalysisGateActive) {
           triggerGate = true;
           soundEngine.playAlarm();
         }
@@ -238,7 +317,12 @@ export function App() {
           ...prev,
           distance: nextDist,
           score: prev.score + 1,
+          shipY: nextShipY,
+          shipState: nextShipState,
           isAnalysisGateActive: triggerGate,
+          gateTimer: triggerGate ? 8.0 : prev.gateTimer,
+          gateHintUsed: triggerGate ? false : prev.gateHintUsed,
+          gateEliminatedOptions: triggerGate ? [] : prev.gateEliminatedOptions,
           screenShake: Math.max(0, prev.screenShake - dt * 8),
         };
       });
@@ -250,7 +334,7 @@ export function App() {
     }, 50);
 
     return () => clearInterval(interval);
-  }, [gameState.appMode, gameState.isGameOver, gameState.isVictory, gameState.isAnalysisGateActive]);
+  }, [gameState.appMode, gameState.isGameOver, gameState.isVictory, gameState.isAnalysisGateActive, addLog]);
 
   // Solver Matrix & Target Handlers
   const handleMatrixChange = (newMatrix: Matrix2D) => {
@@ -287,6 +371,17 @@ export function App() {
     addLog(`LOADED PRESET: ${preset.name}`, "critical", preset.description);
   };
 
+  // Auto-Snap Solution in Academy
+  const handleAutoSnap = (targetVal: number) => {
+    soundEngine.playParry(true);
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    spawnParticles(centerX, centerY, '#34d399', 30);
+    spawnFloatingText(`✨ AUTO-SNAPPED TO ${targetVal}°!`, centerX, centerY, '#34d399', 20);
+    setGameState((prev) => ({ ...prev, interactiveAngle: targetVal }));
+    addLog(`Auto-snapped angle to target ${targetVal}°!`, "player_action");
+  };
+
   // Analysis Gate Checkpoint Handler
   const handleAnalysisGateAnswer = (optionIdx: number) => {
     if (optionIdx === gameState.correctOptionIndex) {
@@ -304,17 +399,71 @@ export function App() {
       }));
     } else {
       soundEngine.playAlarm();
-      spawnFloatingText(`❌ INCORRECT ANALYSIS! -10 HP`, window.innerWidth / 2, window.innerHeight / 2, '#f43f5e', 22);
+      spawnFloatingText(`❌ INCORRECT! -25 HP`, window.innerWidth / 2, window.innerHeight / 2, '#f43f5e', 22);
+      addLog("ANALYSIS GATE FAILED: Moderate damage sustained (-25 HP).", "boss_attack");
+      const nextHp = Math.max(0, gameState.playerHp - 25);
       setGameState((prev) => ({
         ...prev,
         isAnalysisGateActive: false,
-        playerHp: Math.max(0, prev.playerHp - 10),
+        playerHp: nextHp,
+        isGameOver: nextHp <= 0,
       }));
     }
   };
 
+  // Analysis Gate 50/50 Hint Handler
+  const handleAnalysisGateHint = () => {
+    if (gameState.gateHintUsed) return;
+    soundEngine.playAnchor();
+    const wrongIndices = gameState.gateOptions
+      .map((_, idx) => idx)
+      .filter((idx) => idx !== gameState.correctOptionIndex);
+
+    if (wrongIndices.length > 0) {
+      const eliminated = wrongIndices[0];
+      setGameState((prev) => ({
+        ...prev,
+        gateHintUsed: true,
+        gateEliminatedOptions: [...prev.gateEliminatedOptions, eliminated],
+      }));
+      addLog("50/50 HINT USED: Incorrect option eliminated.", "info");
+    }
+  };
+
+  // Reset Boss Runner in-memory (no full page reload)
+  const handleRestartBoss = () => {
+    setGameState((prev) => ({
+      ...prev,
+      bossHp: 768,
+      playerHp: 100,
+      distance: 0,
+      score: 0,
+      isGameOver: false,
+      isVictory: false,
+      isAnalysisGateActive: false,
+      shipLane: 0,
+      shipY: 0,
+      shipState: 'normal',
+    }));
+    addLog("RUNNER REBOOTED: IN-MEMORY RESTART SUCCESSFUL", "warning");
+  };
+
   return (
     <div onClick={initAudioCtx} className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 p-2.5 gap-2 scanline select-none overflow-hidden">
+      {/* Audio Gesture Unlock Banner */}
+      {!gameState.audioInitialized && (
+        <div
+          onClick={initAudioCtx}
+          className="bg-cyan-950/90 border border-cyan-500/80 px-4 py-1.5 rounded-lg text-xs font-bold text-cyan-200 flex items-center justify-between shadow-lg cursor-pointer shrink-0 animate-pulse"
+        >
+          <div className="flex items-center gap-2">
+            <Volume2 className="w-4 h-4 text-cyan-400" />
+            <span>Audio suspended by browser policy. Click anywhere to activate SFX!</span>
+          </div>
+          <span className="text-[11px] bg-cyan-900 px-2 py-0.5 rounded text-cyan-300">ACTIVATE</span>
+        </div>
+      )}
+
       {/* Top Main Header */}
       <header className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-lg px-4 py-2 backdrop-blur shadow-lg shrink-0">
         <div className="flex items-center gap-2">
@@ -340,6 +489,19 @@ export function App() {
           }}
           onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
           onOpenInstructions={() => setGameState((prev) => ({ ...prev, showInstructionsModal: true }))}
+          onTouchMoveLane={(dir) =>
+            setGameState((prev) => ({
+              ...prev,
+              shipLane: (dir === 'left' ? Math.max(-1, prev.shipLane - 1) : Math.min(1, prev.shipLane + 1)) as Lane,
+            }))
+          }
+          onTouchJump={() =>
+            setGameState((prev) => (prev.shipState !== 'jumping' ? { ...prev, shipY: 70, shipState: 'jumping' } : prev))
+          }
+          onTouchSlide={() =>
+            setGameState((prev) => (prev.shipState !== 'sliding' ? { ...prev, shipY: -25, shipState: 'sliding' } : prev))
+          }
+          onTouchFire={handleFireBlaster}
         />
       </div>
 
@@ -353,6 +515,7 @@ export function App() {
               currentChapterId={gameState.academyChapter}
               onSelectChapter={(chId) => setGameState((prev) => ({ ...prev, academyChapter: chId }))}
               onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
+              onAutoSnap={handleAutoSnap}
               onCompleteChapter={() => {
                 soundEngine.playParry(true);
                 addLog(`COMPLETED CHAPTER ${gameState.academyChapter}!`, "critical");
@@ -386,6 +549,7 @@ export function App() {
               particles={particles}
               floatingTexts={floatingTexts}
               onAnalysisGateAnswer={handleAnalysisGateAnswer}
+              onAnalysisGateHint={handleAnalysisGateHint}
             />
           </div>
         </div>
@@ -422,9 +586,46 @@ export function App() {
             <p className="text-slate-300 text-xs leading-relaxed">
               You mastered visual vector theory, basis reduction, LLL Gram-Schmidt decomposition, and Babai CVP!
             </p>
-            <button onClick={() => window.location.reload()} className="w-full py-3 bg-emerald-600 font-bold rounded-lg text-slate-950">
-              REBOOT PLATFORM
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRestartBoss}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-lg text-slate-950 flex items-center justify-center gap-1.5 min-h-[44px]"
+              >
+                <RotateCcw className="w-4 h-4" /> PLAY AGAIN
+              </button>
+              <button
+                onClick={() => setGameState((prev) => ({ ...prev, appMode: 'academy', isVictory: false }))}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 font-bold rounded-lg text-cyan-300 border border-slate-700 flex items-center justify-center gap-1.5 min-h-[44px]"
+              >
+                ACADEMY <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal */}
+      {gameState.isGameOver && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 font-mono">
+          <div className="bg-slate-900 border-2 border-rose-500 rounded-xl p-6 max-w-md w-full shadow-2xl text-center space-y-4">
+            <h2 className="text-2xl font-bold text-rose-400">SHIP SHIELD CRASHED</h2>
+            <p className="text-slate-300 text-xs leading-relaxed">
+              Your starfighter took too much noise damage. Review concepts in The Academy or try again!
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRestartBoss}
+                className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 font-bold rounded-lg text-slate-950 flex items-center justify-center gap-1.5 min-h-[44px]"
+              >
+                <RotateCcw className="w-4 h-4" /> TRY AGAIN
+              </button>
+              <button
+                onClick={() => setGameState((prev) => ({ ...prev, appMode: 'academy', isGameOver: false }))}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 font-bold rounded-lg text-cyan-300 border border-slate-700 flex items-center justify-center gap-1.5 min-h-[44px]"
+              >
+                ACADEMY <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

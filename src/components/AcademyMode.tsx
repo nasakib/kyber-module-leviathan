@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AcademyChapter } from '../types/game';
-import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Zap, Award } from 'lucide-react';
+import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Zap, Award, HelpCircle, Wand2 } from 'lucide-react';
 
 export const ACADEMY_CHAPTERS: AcademyChapter[] = [
   {
@@ -15,6 +15,7 @@ export const ACADEMY_CHAPTERS: AcademyChapter[] = [
     targetValue: 90,
     currentValue: 45,
     unit: 'degrees',
+    hint: 'Drag the slider until θ = 90°. At 90°, the dot product is 0 and vectors b₁ and b₂ are perpendicular.',
   },
   {
     id: 2,
@@ -28,6 +29,7 @@ export const ACADEMY_CHAPTERS: AcademyChapter[] = [
     targetValue: 90,
     currentValue: 30,
     unit: 'degrees',
+    hint: 'When θ = 90°, the fundamental domain parallelogram becomes a square rectangle with maximal area.',
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ export const ACADEMY_CHAPTERS: AcademyChapter[] = [
     targetValue: 90,
     currentValue: 15,
     unit: 'degrees',
+    hint: 'Skinny angles (like 15° or 165°) cause vector lengths to explode. Align θ to 90° for optimal orthogonality (H=1).',
   },
   {
     id: 4,
@@ -54,6 +57,7 @@ export const ACADEMY_CHAPTERS: AcademyChapter[] = [
     targetValue: 90,
     currentValue: 60,
     unit: 'degrees',
+    hint: 'When basis vectors are orthogonal (90°), the closest lattice vector can be rounded coordinate-by-coordinate to recover secret noise e.',
   },
   {
     id: 5,
@@ -67,6 +71,7 @@ export const ACADEMY_CHAPTERS: AcademyChapter[] = [
     targetValue: 90,
     currentValue: 40,
     unit: 'degrees',
+    hint: 'At 90°, the projection coefficient μ is 0, satisfying both the size-reduction bound and the Lovász condition.',
   },
 ];
 
@@ -75,6 +80,7 @@ interface AcademyModeProps {
   onSelectChapter: (chapterId: number) => void;
   onOpenDrawer: () => void;
   onCompleteChapter: () => void;
+  onAutoSnap?: (val: number) => void;
 }
 
 export const AcademyMode: React.FC<AcademyModeProps> = ({
@@ -82,8 +88,25 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
   onSelectChapter,
   onOpenDrawer,
   onCompleteChapter,
+  onAutoSnap,
 }) => {
   const chapter = ACADEMY_CHAPTERS.find((c) => c.id === currentChapterId) || ACADEMY_CHAPTERS[0];
+  const [secondsOnTask, setSecondsOnTask] = useState<number>(0);
+  const [showHint, setShowHint] = useState<boolean>(false);
+
+  // Reset hint state and timer when chapter changes
+  useEffect(() => {
+    setSecondsOnTask(0);
+    setShowHint(false);
+  }, [currentChapterId]);
+
+  // Adaptive 15s timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsOnTask((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="flex flex-col gap-3 font-mono">
@@ -98,13 +121,13 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
           </div>
           <button
             onClick={onOpenDrawer}
-            className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition"
+            className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[44px]"
           >
-            <Sparkles className="w-3 h-3" /> OPEN EXPLANATORY DRAWER
+            <Sparkles className="w-3.5 h-3.5" /> OPEN EXPLANATORY DRAWER
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {ACADEMY_CHAPTERS.map((ch) => {
             const isActive = ch.id === currentChapterId;
 
@@ -112,7 +135,7 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
               <button
                 key={ch.id}
                 onClick={() => onSelectChapter(ch.id)}
-                className={`p-2 rounded-lg border text-left transition ${
+                className={`p-2 rounded-lg border text-left transition min-h-[44px] ${
                   isActive
                     ? 'bg-cyan-950/80 border-cyan-400 text-slate-100 shadow-md'
                     : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-400'
@@ -153,18 +176,57 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
           <p className="text-emerald-300 font-mono text-[11px] font-semibold">{chapter.mathDefinition}</p>
         </div>
 
-        {/* Chapter Micro-Task */}
-        <div className="bg-slate-950 p-3 rounded-lg border border-cyan-800 flex items-center justify-between gap-3 text-xs">
-          <div>
-            <span className="font-bold text-cyan-400 text-[11px]">CHAPTER TASK: </span>
-            <span className="text-slate-200 text-[11px]">{chapter.microTask}</span>
+        {/* Chapter Micro-Task & Anti-Frustration Tools */}
+        <div className="bg-slate-950 p-3 rounded-lg border border-cyan-800 flex flex-col gap-2.5 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span className="font-bold text-cyan-400 text-[11px]">CHAPTER TASK: </span>
+              <span className="text-slate-200 text-[11px]">{chapter.microTask}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Auto-Snap Solution Button */}
+              {onAutoSnap && (
+                <button
+                  onClick={() => onAutoSnap(chapter.targetValue)}
+                  className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900 border border-amber-600 text-amber-300 font-bold rounded-lg shrink-0 flex items-center gap-1 text-[11px] min-h-[44px] transition"
+                  title="Automatically configure vectors to target solution"
+                >
+                  <Wand2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Auto-Snap</span>
+                </button>
+              )}
+
+              {/* Complete Chapter Button */}
+              <button
+                onClick={onCompleteChapter}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg shrink-0 flex items-center gap-1 text-xs min-h-[44px] transition"
+              >
+                COMPLETE <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={onCompleteChapter}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg shrink-0 flex items-center gap-1 text-xs"
-          >
-            COMPLETE CHAPTER <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+
+          {/* Adaptive Hint (appears after 15 seconds) */}
+          {secondsOnTask >= 15 && !showHint && (
+            <button
+              onClick={() => setShowHint(true)}
+              className="w-fit text-[11px] text-amber-300 hover:text-amber-200 bg-amber-950/60 border border-amber-500/50 px-2.5 py-1 rounded flex items-center gap-1.5 animate-pulse min-h-[44px]"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span>Need a Hint? (Task Clue Available)</span>
+            </button>
+          )}
+
+          {showHint && (
+            <div className="p-2.5 rounded bg-slate-900 border border-amber-500/60 text-amber-200 text-[11px] leading-relaxed flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-amber-300">CLUE: </span>
+                {chapter.hint}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Chapter Navigation Footer */}
@@ -172,9 +234,9 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
           <button
             onClick={() => onSelectChapter(Math.max(1, currentChapterId - 1))}
             disabled={currentChapterId === 1}
-            className="flex items-center gap-1 px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300"
+            className="flex items-center gap-1 px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 min-h-[44px]"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> PREVIOUS CHAPTER
+            <ArrowLeft className="w-3.5 h-3.5" /> PREVIOUS
           </button>
 
           <span className="text-[11px] text-slate-400 font-bold">
@@ -184,9 +246,9 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
           <button
             onClick={() => onSelectChapter(Math.min(ACADEMY_CHAPTERS.length, currentChapterId + 1))}
             disabled={currentChapterId === ACADEMY_CHAPTERS.length}
-            className="flex items-center gap-1 px-3 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold"
+            className="flex items-center gap-1 px-3 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold min-h-[44px]"
           >
-            NEXT CHAPTER <ArrowRight className="w-3.5 h-3.5" />
+            NEXT <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
