@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ALL_LEVELS } from './data/levels';
-import { LevelDefinition, AppMode, UserProgressStore, HypothesisOption, LevelMasteryStatus } from './types/game';
+import {
+  LevelDefinition,
+  AppMode,
+  UserProgressStore,
+  HypothesisOption,
+  LevelMasteryStatus,
+} from './types/game';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import {
+  saveProgressToCloud,
+  syncProgressWithCloud,
+  subscribeToCloudProgress,
+} from './services/cloudSaveService';
 import { HUD } from './components/HUD';
 import { LevelCanvas } from './components/LevelCanvas';
 import { ControlTerminal } from './components/ControlTerminal';
@@ -9,19 +21,29 @@ import { LevelSelectModal } from './components/LevelSelectModal';
 import { VictoryModal } from './components/VictoryModal';
 import { SandboxStudio } from './components/SandboxStudio';
 import { HypothesisModal } from './components/HypothesisModal';
+import { AuthModal } from './components/AuthModal';
+import { CommunityBrowser } from './components/CommunityBrowser';
+import { ClassroomModal } from './components/ClassroomModal';
+import { PublishLevelModal } from './components/PublishLevelModal';
 import { checkEnergyBudget } from './components/EnergyBudgetMeter';
 import { soundEngine } from './utils/audio';
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEY = 'vectorforge_save_v1';
 
-export const App: React.FC = () => {
+const VectorForgeApp: React.FC = () => {
+  const { user, profile, isConfigured } = useAuth();
+
   // App Mode: 'puzzle' (campaign) vs 'sandbox'
   const [appMode, setAppMode] = useState<AppMode>('puzzle');
 
   // Level Progression State
   const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(0);
-  const currentLevel = ALL_LEVELS[currentLevelIndex] || ALL_LEVELS[0];
+  const [customCommunityLevel, setCustomCommunityLevel] = useState<LevelDefinition | null>(null);
+
+  // Active level is custom community level if playing one, otherwise campaign level
+  const currentLevel: LevelDefinition =
+    customCommunityLevel || ALL_LEVELS[currentLevelIndex] || ALL_LEVELS[0];
 
   // Active Parameters for current level
   const [params, setParams] = useState<Record<string, number>>(currentLevel.defaultParams);
@@ -37,6 +59,11 @@ export const App: React.FC = () => {
   const [isCurriculumOpen, setIsCurriculumOpen] = useState<boolean>(false);
   const [isLevelSelectOpen, setIsLevelSelectOpen] = useState<boolean>(false);
   const [isHypothesisOpen, setIsHypothesisOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isCommunityOpen, setIsCommunityOpen] = useState<boolean>(false);
+  const [isClassroomOpen, setIsClassroomOpen] = useState<boolean>(false);
+  const [isPublishOpen, setIsPublishOpen] = useState<boolean>(false);
+
   const [selectedHypothesisOption, setSelectedHypothesisOption] = useState<HypothesisOption | null>(null);
   const [masteryStatus, setMasteryStatus] = useState<LevelMasteryStatus | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -51,7 +78,6 @@ export const App: React.FC = () => {
     } catch {
       // Ignore JSON error
     }
-    // Default unlocked state
     const initial: UserProgressStore = {};
     ALL_LEVELS.forEach((lvl, i) => {
       initial[lvl.id] = {
@@ -72,6 +98,27 @@ export const App: React.FC = () => {
       // Storage quota or disabled
     }
   }, [progress]);
+
+  // Two-way synchronization with Supabase cloud when user logs in
+  useEffect(() => {
+    if (user?.id) {
+      syncProgressWithCloud(user.id, progress).then((merged) => {
+        setProgress(merged);
+      });
+
+      // Subscribe to realtime cloud updates from other tabs / devices
+      const unsubscribe = subscribeToCloudProgress(user.id, (levelId, remoteProg) => {
+        setProgress((prev) => ({
+          ...prev,
+          [levelId]: remoteProg,
+        }));
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [user?.id]);
 
   // When level changes, reset state
   useEffect(() => {
@@ -114,13 +161,11 @@ export const App: React.FC = () => {
   // Auto calculate solution or give hint
   const handleAutoCalculate = () => {
     if (attempts < 2) {
-      // Open Curriculum drawer directly to school derivation
       setIsCurriculumOpen(true);
       soundEngine.playTargetHit(1);
     } else {
-      // Auto populate exact solution parameters
       setParams({ ...currentLevel.solutionParams });
-      soundEngine.playTargetHit(3);
+      soundEngine.playTargetHit(2);
     }
   };
 
@@ -130,7 +175,6 @@ export const App: React.FC = () => {
     setTargetsHitCount(targetsHit.length);
 
     if (success && !hasWon) {
-      // Calculate star rating
       let stars = 1;
       if (attempts <= 2) stars = 3;
       else if (attempts <= 4) stars = 2;
@@ -158,28 +202,35 @@ export const App: React.FC = () => {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#22d3ee', '#34d399', '#fbbf24', '#f43f5e']
+        colors: ['#22d3ee', '#34d399', '#fbbf24', '#f43f5e'],
       });
 
-      // Update progress
+      // Update progress locally
       setProgress((prev) => {
         const prevLevelProg = prev[currentLevel.id] || { completed: false, stars: 0, bestAttempts: 999, unlocked: true };
         const updatedStars = Math.max(prevLevelProg.stars, stars);
         const updatedAttempts = prevLevelProg.bestAttempts ? Math.min(prevLevelProg.bestAttempts, attempts) : attempts;
 
-        const nextStore = {
-          ...prev,
-          [currentLevel.id]: {
-            completed: true,
-            stars: updatedStars,
-            bestAttempts: updatedAttempts,
-            unlocked: true,
-            masteryStatus: status,
-          }
+        const updatedLevelProg = {
+          completed: true,
+          stars: updatedStars,
+          bestAttempts: updatedAttempts,
+          unlocked: true,
+          masteryStatus: status,
         };
 
-        // Unlock next level
-        if (currentLevelIndex + 1 < ALL_LEVELS.length) {
+        // If cloud user is logged in, upload progress asynchronously
+        if (user?.id) {
+          saveProgressToCloud(user.id, currentLevel.id, updatedLevelProg);
+        }
+
+        const nextStore = {
+          ...prev,
+          [currentLevel.id]: updatedLevelProg,
+        };
+
+        // Unlock next level in campaign
+        if (!customCommunityLevel && currentLevelIndex + 1 < ALL_LEVELS.length) {
           const nextLvl = ALL_LEVELS[currentLevelIndex + 1];
           if (!nextStore[nextLvl.id]) {
             nextStore[nextLvl.id] = { completed: false, stars: 0, bestAttempts: 0, unlocked: true };
@@ -195,12 +246,20 @@ export const App: React.FC = () => {
 
   // Level Navigation
   const handlePrevLevel = () => {
+    if (customCommunityLevel) {
+      setCustomCommunityLevel(null);
+      return;
+    }
     if (currentLevelIndex > 0) {
       setCurrentLevelIndex(currentLevelIndex - 1);
     }
   };
 
   const handleNextLevel = () => {
+    if (customCommunityLevel) {
+      setCustomCommunityLevel(null);
+      return;
+    }
     if (currentLevelIndex + 1 < ALL_LEVELS.length) {
       setCurrentLevelIndex(currentLevelIndex + 1);
       setHasWon(false);
@@ -208,6 +267,7 @@ export const App: React.FC = () => {
   };
 
   const handleSelectLevel = (lvl: LevelDefinition) => {
+    setCustomCommunityLevel(null);
     const idx = ALL_LEVELS.findIndex((l) => l.id === lvl.id);
     if (idx !== -1) {
       setCurrentLevelIndex(idx);
@@ -217,19 +277,18 @@ export const App: React.FC = () => {
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input field
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         handleFire();
-      } else if (e.key === 'r' || e.key === 'R') {
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
         handleReset();
-      } else if (e.key === 'Escape') {
-        setIsCurriculumOpen(false);
-        setIsLevelSelectOpen(false);
-        setHasWon(false);
+      } else if (e.code === 'KeyC') {
+        e.preventDefault();
+        setIsCurriculumOpen((prev) => !prev);
       }
     };
 
@@ -238,42 +297,52 @@ export const App: React.FC = () => {
   }, [handleFire, handleReset]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono selection:bg-cyan-500 selection:text-slate-950">
-      {/* Top HUD */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased">
+      {/* Top Application HUD */}
       <HUD
         currentLevel={currentLevel}
         appMode={appMode}
-        onToggleAppMode={setAppMode}
+        onToggleAppMode={(mode) => setAppMode(mode)}
         progress={progress}
         onOpenLevelSelect={() => setIsLevelSelectOpen(true)}
         onOpenCurriculum={() => setIsCurriculumOpen(true)}
+        onOpenCommunity={() => setIsCommunityOpen(true)}
+        onOpenClassroom={() => setIsClassroomOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
         onPrevLevel={handlePrevLevel}
         onNextLevel={handleNextLevel}
-        hasPrevLevel={currentLevelIndex > 0}
-        hasNextLevel={currentLevelIndex + 1 < ALL_LEVELS.length}
+        hasPrevLevel={!customCommunityLevel && currentLevelIndex > 0}
+        hasNextLevel={!customCommunityLevel && currentLevelIndex + 1 < ALL_LEVELS.length}
         isMuted={isMuted}
         onToggleMute={toggleMute}
+        isCloudConnected={isConfigured}
+        userDisplayName={profile?.displayName}
+        userRole={profile?.role}
       />
 
-      {/* Main Game Surface */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-5 flex flex-col space-y-4">
+      {/* Main Workspace Area */}
+      <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col space-y-4">
+        {/* Custom Community Level Banner */}
+        {customCommunityLevel && (
+          <div className="p-3 bg-gradient-to-r from-purple-950/80 to-blue-950/80 border border-purple-500/40 rounded-xl flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-0.5 bg-purple-900 text-purple-200 font-bold rounded">
+                Community Puzzle
+              </span>
+              <span className="text-slate-200 font-bold">{customCommunityLevel.title}</span>
+            </div>
+            <button
+              onClick={() => setCustomCommunityLevel(null)}
+              className="text-cyan-400 hover:text-cyan-300 font-bold underline"
+            >
+              Return to Campaign
+            </button>
+          </div>
+        )}
+
         {appMode === 'puzzle' ? (
           <>
-            {/* Level Briefing Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-xs backdrop-blur-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <span className="font-bold text-cyan-400">OBJECTIVE:</span>
-                <span className="text-slate-300">{currentLevel.description}</span>
-              </div>
-              <button
-                onClick={() => setIsCurriculumOpen(true)}
-                className="text-cyan-400 hover:text-cyan-300 underline font-semibold self-start sm:self-auto shrink-0"
-              >
-                View Theory & Solution Steps →
-              </button>
-            </div>
-
-            {/* Interactive 60 FPS HTML5 Canvas */}
+            {/* 60 FPS HTML5 Canvas Engine */}
             <LevelCanvas
               level={currentLevel}
               params={params}
@@ -284,7 +353,7 @@ export const App: React.FC = () => {
               playObstacleSound={() => soundEngine.playObstacleClang()}
             />
 
-            {/* Cyberpunk Control Terminal */}
+            {/* Futuristic Cyberpunk Control Terminal */}
             <ControlTerminal
               level={currentLevel}
               params={params}
@@ -292,13 +361,12 @@ export const App: React.FC = () => {
               onFire={handleFire}
               onReset={handleReset}
               onAutoCalculate={handleAutoCalculate}
-              onOpenHypothesis={() => setIsHypothesisOpen(true)}
-              isHypothesisAnswered={selectedHypothesisOption !== null}
-              hypothesisCorrect={selectedHypothesisOption?.isCorrect ?? false}
               isFiring={isFiring}
               attempts={attempts}
               targetsHitCount={targetsHitCount}
               totalTargets={currentLevel.targets.length}
+              onOpenHypothesis={currentLevel.hypothesis ? () => setIsHypothesisOpen(true) : undefined}
+              isHypothesisAnswered={selectedHypothesisOption !== null}
             />
           </>
         ) : (
@@ -347,7 +415,7 @@ export const App: React.FC = () => {
         stars={awardedStars}
         attempts={attempts}
         masteryStatus={masteryStatus ?? undefined}
-        hasNextLevel={currentLevelIndex + 1 < ALL_LEVELS.length}
+        hasNextLevel={!customCommunityLevel && currentLevelIndex + 1 < ALL_LEVELS.length}
         onNextLevel={handleNextLevel}
         onReplay={() => {
           setHasWon(false);
@@ -359,7 +427,53 @@ export const App: React.FC = () => {
           setIsCurriculumOpen(true);
         }}
       />
+
+      {/* Supabase Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
+
+      {/* Community Level Browser */}
+      <CommunityBrowser
+        isOpen={isCommunityOpen}
+        onClose={() => setIsCommunityOpen(false)}
+        onPlayLevel={(communityLvl) => {
+          setCustomCommunityLevel(communityLvl);
+          setAppMode('puzzle');
+        }}
+        onOpenPublish={() => setIsPublishOpen(true)}
+      />
+
+      {/* Classroom Homework & Assignment Modal */}
+      <ClassroomModal
+        isOpen={isClassroomOpen}
+        onClose={() => setIsClassroomOpen(false)}
+        progress={progress}
+        onSelectLevelId={(lvlId) => {
+          setCustomCommunityLevel(null);
+          const idx = ALL_LEVELS.findIndex((l) => l.id === lvlId);
+          if (idx !== -1) {
+            setCurrentLevelIndex(idx);
+          }
+        }}
+      />
+
+      {/* Community Level Publisher Modal */}
+      <PublishLevelModal
+        isOpen={isPublishOpen}
+        onClose={() => setIsPublishOpen(false)}
+        levelToPublish={currentLevel}
+      />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <VectorForgeApp />
+    </AuthProvider>
   );
 };
 
