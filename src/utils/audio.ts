@@ -206,6 +206,29 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.25);
   }
+
+  // Futuristic frequency rise tone
+  public playLaserCharge() {
+    if (!this.ctx || this.isMuted) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(900, now + 0.15);
+
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
 }
 
 export const soundEngine = new SoundEngine();

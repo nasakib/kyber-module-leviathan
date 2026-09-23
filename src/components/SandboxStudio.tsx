@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { SandboxMode, LevelDefinition } from '../types/game';
 import { LevelCanvas } from './LevelCanvas';
 import { ControlTerminal } from './ControlTerminal';
-import { Share2, Check, Sparkles } from 'lucide-react';
+import { DesmosGrapher } from './DesmosGrapher';
+import { Share2, Check, Sparkles, Sliders } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 
 export const SandboxStudio: React.FC = () => {
-  const [mode, setMode] = useState<SandboxMode>('linear');
+  const [mode, setMode] = useState<SandboxMode>('desmos');
   const [params, setParams] = useState<Record<string, number>>({
     m: 1.5,
     b: -1.0,
@@ -32,6 +33,7 @@ export const SandboxStudio: React.FC = () => {
   // Construct dynamic Sandbox level configuration for Canvas
   const getSandboxLevel = (): LevelDefinition => {
     switch (mode) {
+      case 'desmos':
       case 'linear':
         return {
           id: 'sandbox_linear',
@@ -234,65 +236,95 @@ export const SandboxStudio: React.FC = () => {
 
         {/* Mode Selector Chips */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {(['linear', 'parabola', 'matrix', 'calculus', 'lattice'] as SandboxMode[]).map((m) => (
+          <button
+            onClick={() => {
+              setMode('desmos');
+              soundEngine.playLaserCharge();
+            }}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
+              mode === 'desmos'
+                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/25'
+                : 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-800/60'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Desmos Grapher</span>
+          </button>
+
+          {(
+            [
+              { id: 'linear', label: 'Linear' },
+              { id: 'parabola', label: 'Parabola' },
+              { id: 'matrix', label: 'Matrix' },
+              { id: 'calculus', label: 'Calculus' },
+              { id: 'lattice', label: 'Lattice' },
+            ] as { id: SandboxMode; label: string }[]
+          ).map((m) => (
             <button
-              key={m}
+              key={m.id}
               onClick={() => {
-                setMode(m);
+                setMode(m.id);
                 soundEngine.playSliderTick();
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono capitalize transition-all ${
-                mode === m
+                mode === m.id
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
             >
-              {m}
+              {m.label}
             </button>
           ))}
 
-          {/* Copy Configuration */}
-          <button
-            onClick={handleShare}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono ml-2 transition-colors"
-            title="Copy configuration JSON"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied!' : 'Export'}</span>
-          </button>
+          {/* Copy Configuration (For Physics Modes) */}
+          {mode !== 'desmos' && (
+            <button
+              onClick={handleShare}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono ml-2 transition-colors border border-slate-700"
+              title="Copy configuration JSON"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied!' : 'Export'}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Canvas */}
-      <LevelCanvas
-        level={currentLevel}
-        params={params}
-        onParamChange={handleParamChange}
-        isFiring={isFiring}
-        onSimulationComplete={() => setIsFiring(false)}
-        playHitSound={(i) => soundEngine.playTargetHit(i)}
-        playObstacleSound={() => soundEngine.playObstacleClang()}
-      />
+      {/* Main Content: Desmos Studio or Physics Simulation Canvas & Terminal */}
+      {mode === 'desmos' ? (
+        <DesmosGrapher />
+      ) : (
+        <>
+          <LevelCanvas
+            level={currentLevel}
+            params={params}
+            onParamChange={handleParamChange}
+            isFiring={isFiring}
+            onSimulationComplete={() => setIsFiring(false)}
+            playHitSound={(i) => soundEngine.playTargetHit(i)}
+            playObstacleSound={() => soundEngine.playObstacleClang()}
+          />
 
-      {/* Controls */}
-      <ControlTerminal
-        level={currentLevel}
-        params={params}
-        onParamChange={handleParamChange}
-        onFire={() => {
-          soundEngine.playBeamSnap();
-          setIsFiring(true);
-        }}
-        onReset={() => {
-          setParams(currentLevel.defaultParams);
-          soundEngine.playSliderTick();
-        }}
-        onAutoCalculate={() => {}}
-        isFiring={isFiring}
-        attempts={0}
-        targetsHitCount={0}
-        totalTargets={currentLevel.targets.length}
-      />
+          <ControlTerminal
+            level={currentLevel}
+            params={params}
+            onParamChange={handleParamChange}
+            onFire={() => {
+              soundEngine.playBeamSnap();
+              setIsFiring(true);
+            }}
+            onReset={() => {
+              setParams(currentLevel.defaultParams);
+              soundEngine.playSliderTick();
+            }}
+            onAutoCalculate={() => {}}
+            isFiring={isFiring}
+            attempts={0}
+            targetsHitCount={0}
+            totalTargets={currentLevel.targets.length}
+          />
+        </>
+      )}
     </div>
   );
 };

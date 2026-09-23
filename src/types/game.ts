@@ -230,7 +230,7 @@ export type UserProgressStore = Record<string, UserLevelProgress>;
 
 export type AppMode = 'puzzle' | 'sandbox';
 
-export type SandboxMode = 'linear' | 'parabola' | 'matrix' | 'calculus' | 'lattice';
+export type SandboxMode = 'desmos' | 'linear' | 'parabola' | 'matrix' | 'calculus' | 'lattice';
 
 export interface TrajectoryPoint {
   x: number;
