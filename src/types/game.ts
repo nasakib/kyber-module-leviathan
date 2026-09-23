@@ -1,4 +1,71 @@
-export type AppMode = 'academy' | 'solver' | 'boss';
+export type AppMode = 'curriculum' | 'academy' | 'solver' | 'boss';
+
+export interface RosettaRow {
+  id: string;
+  algebraConcept: string;
+  canvasElement: string;
+  symbolicMath: string;
+  plainEnglish: string;
+  highlightKey?: string;
+}
+
+export interface DerivationStep {
+  stepNumber: number;
+  label: string;
+  algebraicLine: string;
+  computedLine?: (params: Record<string, number>) => string;
+  whyItWorks: string;
+}
+
+export type QuizQuestionType = 'visual_prediction' | 'misconception_trap' | 'symbolic_calc';
+
+export interface QuizQuestion {
+  id: string;
+  type: QuizQuestionType;
+  prompt: string;
+  subtitle?: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  hint?: string;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  subtitle: string;
+  rosettaRows: RosettaRow[];
+  derivation: {
+    title: string;
+    description: string;
+    parameterName: string;
+    parameterLabel: string;
+    parameterDefault: number;
+    parameterMin: number;
+    parameterMax: number;
+    parameterStep: number;
+    steps: DerivationStep[];
+  };
+  quiz: QuizQuestion[];
+  interactiveMode: 'derivatives' | 'riemann' | 'matrix_stretch' | 'lattice_discrete';
+  defaultCurve?: { a: number; b: number; c: number };
+}
+
+export interface CurriculumModule {
+  id: string;
+  title: string;
+  description: string;
+  tag: string;
+  iconName: string;
+  lessons: Lesson[];
+}
+
+export interface CurriculumProgress {
+  completedLessons: string[];
+  quizScores: Record<string, { score: number; maxScore: number; timestamp: number }>;
+  currentModuleId: string;
+  currentLessonId: string;
+}
 
 export interface Vector2D {
   x: number;
@@ -205,7 +272,12 @@ export interface GameState {
   audioMuted: boolean;
   audioInitialized: boolean;
 
+  // Curriculum Mode State
+  curriculumModuleId: string;
+  curriculumLessonId: string;
+
   // UI & Card Visibility Controls
+  isCurriculumCardOpen: boolean;
   isAcademyCardOpen: boolean;
   isSolverControlsOpen: boolean;
   isTelemetryLogOpen: boolean;

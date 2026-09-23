@@ -19,6 +19,7 @@ import {
   EyeOff,
   Maximize2,
   Minimize2,
+  GraduationCap,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -27,6 +28,7 @@ interface HUDProps {
   onToggleAudio: () => void;
   onOpenDrawer: () => void;
   onOpenInstructions: () => void;
+  onToggleCurriculumCard?: () => void;
   onToggleAcademyCard?: () => void;
   onToggleSolverControls?: () => void;
   onToggleTelemetryLog?: () => void;
@@ -44,6 +46,7 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleAudio,
   onOpenDrawer,
   onOpenInstructions,
+  onToggleCurriculumCard,
   onToggleAcademyCard,
   onToggleSolverControls,
   onToggleTelemetryLog,
@@ -62,6 +65,18 @@ export const HUD: React.FC<HUDProps> = ({
           <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wider mr-1 hidden sm:inline">
             APP MODE:
           </span>
+
+          <button
+            onClick={() => onSelectMode('curriculum')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] min-w-[44px] ${
+              gameState.appMode === 'curriculum'
+                ? 'bg-purple-950 border-purple-400 text-purple-200 shadow-md glow-rose'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4 text-purple-400" />
+            <span>THE CURRICULUM</span>
+          </button>
 
           <button
             onClick={() => onSelectMode('academy')}
@@ -122,6 +137,21 @@ export const HUD: React.FC<HUDProps> = ({
           )}
 
           {/* Quick Card Visibility Toggles */}
+          {gameState.appMode === 'curriculum' && onToggleCurriculumCard && (
+            <button
+              onClick={onToggleCurriculumCard}
+              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isCurriculumCardOpen
+                  ? 'bg-purple-950/80 border-purple-500 text-purple-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title="Toggle Curriculum Card visibility"
+            >
+              {gameState.isCurriculumCardOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">CURRICULUM</span>
+            </button>
+          )}
+
           {gameState.appMode === 'academy' && onToggleAcademyCard && (
             <button
               onClick={onToggleAcademyCard}

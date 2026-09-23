@@ -15,6 +15,7 @@ import { soundEngine } from './utils/audio';
 import { LatticeCanvas } from './components/LatticeCanvas';
 import { HUD } from './components/HUD';
 import { CombatLog } from './components/CombatLog';
+import { CurriculumViewer } from './components/CurriculumViewer';
 import { AcademyMode, ACADEMY_CHAPTERS } from './components/AcademyMode';
 import { SolverLab } from './components/SolverLab';
 import { ExplanatoryDrawer } from './components/ExplanatoryDrawer';
@@ -106,6 +107,9 @@ export function App() {
     audioMuted: false,
     audioInitialized: false,
 
+    curriculumModuleId: 'module-1',
+    curriculumLessonId: 'lesson-1-1',
+    isCurriculumCardOpen: true,
     isAcademyCardOpen: true,
     isSolverControlsOpen: true,
     isTelemetryLogOpen: true,
@@ -119,12 +123,17 @@ export function App() {
       return {
         ...prev,
         isFocusMode: nextFocus,
+        isCurriculumCardOpen: !nextFocus,
         isAcademyCardOpen: !nextFocus,
         isSolverControlsOpen: !nextFocus,
         isTelemetryLogOpen: !nextFocus,
         isBossStatsOpen: !nextFocus,
       };
     });
+  }, []);
+
+  const handleToggleCurriculumCard = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isCurriculumCardOpen: !prev.isCurriculumCardOpen }));
   }, []);
 
   const handleToggleAcademyCard = useCallback(() => {
@@ -552,6 +561,7 @@ export function App() {
           }}
           onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
           onOpenInstructions={() => setGameState((prev) => ({ ...prev, showInstructionsModal: true }))}
+          onToggleCurriculumCard={handleToggleCurriculumCard}
           onToggleAcademyCard={handleToggleAcademyCard}
           onToggleSolverControls={handleToggleSolverControls}
           onToggleTelemetryLog={handleToggleTelemetryLog}
@@ -577,6 +587,11 @@ export function App() {
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2.5">
         {/* Left Column: Active Mode UI & Canvas */}
         <div className={`${gameState.isTelemetryLogOpen ? 'lg:col-span-3' : 'lg:col-span-4'} flex flex-col gap-2 relative`}>
+          {/* MODE 0: THE CURRICULUM */}
+          {gameState.appMode === 'curriculum' && (
+            <CurriculumViewer onClose={() => setGameState((prev) => ({ ...prev, isCurriculumCardOpen: false }))} />
+          )}
+
           {/* MODE 1: THE ACADEMY */}
           {gameState.appMode === 'academy' && (
             gameState.isAcademyCardOpen ? (
@@ -690,23 +705,25 @@ export function App() {
           )}
 
           {/* Interactive Topological Inspection Canvas Container */}
-          <div
-            className={`w-full relative transition-all duration-300 ${
-              (gameState.appMode === 'academy' && !gameState.isAcademyCardOpen) ||
-              (gameState.appMode === 'solver' && !gameState.isSolverControlsOpen) ||
-              (gameState.appMode === 'boss' && !gameState.isBossStatsOpen)
-                ? 'h-[75vh] sm:h-[82vh] min-h-[520px]'
-                : 'h-[50vh] sm:h-[58vh] min-h-[420px]'
-            }`}
-          >
-            <LatticeCanvas
-              gameState={gameState}
-              particles={particles}
-              floatingTexts={floatingTexts}
-              onAnalysisGateAnswer={handleAnalysisGateAnswer}
-              onAnalysisGateHint={handleAnalysisGateHint}
-            />
-          </div>
+          {gameState.appMode !== 'curriculum' && (
+            <div
+              className={`w-full relative transition-all duration-300 ${
+                (gameState.appMode === 'academy' && !gameState.isAcademyCardOpen) ||
+                (gameState.appMode === 'solver' && !gameState.isSolverControlsOpen) ||
+                (gameState.appMode === 'boss' && !gameState.isBossStatsOpen)
+                  ? 'h-[75vh] sm:h-[82vh] min-h-[520px]'
+                  : 'h-[50vh] sm:h-[58vh] min-h-[420px]'
+              }`}
+            >
+              <LatticeCanvas
+                gameState={gameState}
+                particles={particles}
+                floatingTexts={floatingTexts}
+                onAnalysisGateAnswer={handleAnalysisGateAnswer}
+                onAnalysisGateHint={handleAnalysisGateHint}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Column: Telemetry Log */}
