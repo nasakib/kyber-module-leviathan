@@ -204,4 +204,11 @@ export interface GameState {
   // Audio state
   audioMuted: boolean;
   audioInitialized: boolean;
+
+  // UI & Card Visibility Controls
+  isAcademyCardOpen: boolean;
+  isSolverControlsOpen: boolean;
+  isTelemetryLogOpen: boolean;
+  isBossStatsOpen: boolean;
+  isFocusMode: boolean;
 }

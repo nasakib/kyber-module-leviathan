@@ -19,7 +19,22 @@ import { AcademyMode, ACADEMY_CHAPTERS } from './components/AcademyMode';
 import { SolverLab } from './components/SolverLab';
 import { ExplanatoryDrawer } from './components/ExplanatoryDrawer';
 import { OnboardingModal } from './components/OnboardingModal';
-import { Cpu, Trophy, Volume2, ArrowRight, RotateCcw } from 'lucide-react';
+import {
+  Cpu,
+  Trophy,
+  Volume2,
+  ArrowRight,
+  RotateCcw,
+  Sparkles,
+  Maximize2,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  Sliders,
+  BookOpen,
+  Terminal,
+} from 'lucide-react';
 
 const INITIAL_MATRIX: Matrix2D = {
   b1: { x: 200, y: 195 },
@@ -90,7 +105,43 @@ export function App() {
     isVictory: false,
     audioMuted: false,
     audioInitialized: false,
+
+    isAcademyCardOpen: true,
+    isSolverControlsOpen: true,
+    isTelemetryLogOpen: true,
+    isBossStatsOpen: true,
+    isFocusMode: false,
   });
+
+  const handleToggleFocusMode = useCallback(() => {
+    setGameState((prev) => {
+      const nextFocus = !prev.isFocusMode;
+      return {
+        ...prev,
+        isFocusMode: nextFocus,
+        isAcademyCardOpen: !nextFocus,
+        isSolverControlsOpen: !nextFocus,
+        isTelemetryLogOpen: !nextFocus,
+        isBossStatsOpen: !nextFocus,
+      };
+    });
+  }, []);
+
+  const handleToggleAcademyCard = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isAcademyCardOpen: !prev.isAcademyCardOpen }));
+  }, []);
+
+  const handleToggleSolverControls = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isSolverControlsOpen: !prev.isSolverControlsOpen }));
+  }, []);
+
+  const handleToggleTelemetryLog = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isTelemetryLogOpen: !prev.isTelemetryLogOpen }));
+  }, []);
+
+  const handleToggleBossStats = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isBossStatsOpen: !prev.isBossStatsOpen }));
+  }, []);
 
   const [logs, setLogs] = useState<CombatLogEntry[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -165,12 +216,24 @@ export function App() {
     setParticles((prev) => [...prev, ...newParticles]);
   };
 
-  // Keyboard Shortcuts with browser scroll prevention (e.preventDefault)
+  // Keyboard Shortcuts with intelligent scroll prevention (respects inputs and mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
-      if (handledKeys.includes(e.key)) {
-        e.preventDefault();
+      const isInputActive =
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA';
+      if (isInputActive) return;
+
+      if (gameState.appMode === 'boss') {
+        const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
+        if (handledKeys.includes(e.key)) {
+          e.preventDefault();
+        }
+      } else if (gameState.appMode === 'solver') {
+        const handledKeys = ['ArrowLeft', 'ArrowRight', ' '];
+        if (handledKeys.includes(e.key)) {
+          e.preventDefault();
+        }
       }
 
       initAudioCtx();
@@ -449,7 +512,7 @@ export function App() {
   };
 
   return (
-    <div onClick={initAudioCtx} className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 p-2.5 gap-2 scanline select-none overflow-hidden">
+    <div onClick={initAudioCtx} className="flex flex-col min-h-screen w-full bg-slate-950 text-slate-100 p-2 sm:p-3 gap-2 scanline select-none overflow-x-hidden overflow-y-auto">
       {/* Audio Gesture Unlock Banner */}
       {!gameState.audioInitialized && (
         <div
@@ -489,6 +552,11 @@ export function App() {
           }}
           onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
           onOpenInstructions={() => setGameState((prev) => ({ ...prev, showInstructionsModal: true }))}
+          onToggleAcademyCard={handleToggleAcademyCard}
+          onToggleSolverControls={handleToggleSolverControls}
+          onToggleTelemetryLog={handleToggleTelemetryLog}
+          onToggleBossStats={handleToggleBossStats}
+          onToggleFocusMode={handleToggleFocusMode}
           onTouchMoveLane={(dir) =>
             setGameState((prev) => ({
               ...prev,
@@ -506,44 +574,131 @@ export function App() {
       </div>
 
       {/* Main Mode Body */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2.5 min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2.5">
         {/* Left Column: Active Mode UI & Canvas */}
-        <div className="lg:col-span-3 flex flex-col gap-2 min-h-0 relative">
+        <div className={`${gameState.isTelemetryLogOpen ? 'lg:col-span-3' : 'lg:col-span-4'} flex flex-col gap-2 relative`}>
           {/* MODE 1: THE ACADEMY */}
           {gameState.appMode === 'academy' && (
-            <AcademyMode
-              currentChapterId={gameState.academyChapter}
-              onSelectChapter={(chId) => setGameState((prev) => ({ ...prev, academyChapter: chId }))}
-              onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
-              onAutoSnap={handleAutoSnap}
-              onCompleteChapter={() => {
-                soundEngine.playParry(true);
-                addLog(`COMPLETED CHAPTER ${gameState.academyChapter}!`, "critical");
-                setGameState((prev) => ({ ...prev, academyChapter: Math.min(5, prev.academyChapter + 1) }));
-              }}
-            />
+            gameState.isAcademyCardOpen ? (
+              <AcademyMode
+                currentChapterId={gameState.academyChapter}
+                onSelectChapter={(chId) => setGameState((prev) => ({ ...prev, academyChapter: chId }))}
+                onOpenDrawer={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
+                onAutoSnap={handleAutoSnap}
+                onClose={() => setGameState((prev) => ({ ...prev, isAcademyCardOpen: false }))}
+                onCompleteChapter={() => {
+                  soundEngine.playParry(true);
+                  addLog(`COMPLETED CHAPTER ${gameState.academyChapter}!`, "critical");
+                  setGameState((prev) => ({ ...prev, academyChapter: Math.min(5, prev.academyChapter + 1) }));
+                }}
+              />
+            ) : (
+              <div className="bg-slate-900/90 border border-cyan-500/40 rounded-lg p-2.5 backdrop-blur flex items-center justify-between shadow-xl gap-2 font-mono">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-bold text-slate-200">
+                    Ch. 0{gameState.academyChapter}: {ACADEMY_CHAPTERS.find((c) => c.id === gameState.academyChapter)?.title.split(': ')[1]}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
+                    Lesson Hidden • Canvas Focus Active
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, isDrawerOpen: true }))}
+                    className="text-[11px] font-bold px-2.5 py-1 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 min-h-[36px] flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> <span className="hidden sm:inline">OPEN</span> DRAWER
+                  </button>
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, isAcademyCardOpen: true }))}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 min-h-[36px] flex items-center gap-1 shadow-md transition"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" /> REOPEN LESSON
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
           {/* MODE 2: THE GEOMETRIC SOLVER LAB */}
           {gameState.appMode === 'solver' && (
-            <SolverLab
-              matrix={gameState.solverMatrix}
-              target={gameState.solverTarget}
-              steps={gameState.solverSteps}
-              currentStepIndex={gameState.currentStepIndex}
-              isPlaying={gameState.isSolverPlaying}
-              playbackSpeed={gameState.solverPlaybackSpeed}
-              onMatrixChange={handleMatrixChange}
-              onTargetChange={handleTargetChange}
-              onStepIndexChange={(idx) => setGameState((prev) => ({ ...prev, currentStepIndex: idx }))}
-              onTogglePlay={() => setGameState((prev) => ({ ...prev, isSolverPlaying: !prev.isSolverPlaying }))}
-              onSpeedChange={(speed) => setGameState((prev) => ({ ...prev, solverPlaybackSpeed: speed }))}
-              onLoadPreset={handleLoadPreset}
-            />
+            gameState.isSolverControlsOpen ? (
+              <SolverLab
+                matrix={gameState.solverMatrix}
+                target={gameState.solverTarget}
+                steps={gameState.solverSteps}
+                currentStepIndex={gameState.currentStepIndex}
+                isPlaying={gameState.isSolverPlaying}
+                playbackSpeed={gameState.solverPlaybackSpeed}
+                onMatrixChange={handleMatrixChange}
+                onTargetChange={handleTargetChange}
+                onStepIndexChange={(idx) => setGameState((prev) => ({ ...prev, currentStepIndex: idx }))}
+                onTogglePlay={() => setGameState((prev) => ({ ...prev, isSolverPlaying: !prev.isSolverPlaying }))}
+                onSpeedChange={(speed) => setGameState((prev) => ({ ...prev, solverPlaybackSpeed: speed }))}
+                onLoadPreset={handleLoadPreset}
+                onClose={() => setGameState((prev) => ({ ...prev, isSolverControlsOpen: false }))}
+              />
+            ) : (
+              <div className="bg-slate-900/90 border border-amber-500/40 rounded-lg p-2.5 backdrop-blur flex flex-wrap items-center justify-between shadow-xl gap-2 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, currentStepIndex: 0 }))}
+                    className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    title="Reset"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, currentStepIndex: Math.max(0, prev.currentStepIndex - 1) }))}
+                    disabled={gameState.currentStepIndex === 0}
+                    className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    title="Previous"
+                  >
+                    <SkipBack className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, isSolverPlaying: !prev.isSolverPlaying }))}
+                    className="p-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    title={gameState.isSolverPlaying ? 'Pause' : 'Play'}
+                  >
+                    {gameState.isSolverPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                  </button>
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, currentStepIndex: Math.min(prev.solverSteps.length - 1, prev.currentStepIndex + 1) }))}
+                    disabled={gameState.currentStepIndex === gameState.solverSteps.length - 1}
+                    className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    title="Next"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-xs font-bold text-amber-300 ml-1">
+                    Step {gameState.currentStepIndex + 1}/{gameState.solverSteps.length}: {gameState.solverSteps[gameState.currentStepIndex]?.title}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setGameState((prev) => ({ ...prev, isSolverControlsOpen: true }))}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 min-h-[36px] flex items-center gap-1 shadow-md transition"
+                  >
+                    <Sliders className="w-3.5 h-3.5" /> REOPEN CONTROLS
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
-          {/* Interactive Topological Inspection Canvas */}
-          <div className="flex-1 min-h-0">
+          {/* Interactive Topological Inspection Canvas Container */}
+          <div
+            className={`w-full relative transition-all duration-300 ${
+              (gameState.appMode === 'academy' && !gameState.isAcademyCardOpen) ||
+              (gameState.appMode === 'solver' && !gameState.isSolverControlsOpen) ||
+              (gameState.appMode === 'boss' && !gameState.isBossStatsOpen)
+                ? 'h-[75vh] sm:h-[82vh] min-h-[520px]'
+                : 'h-[50vh] sm:h-[58vh] min-h-[420px]'
+            }`}
+          >
             <LatticeCanvas
               gameState={gameState}
               particles={particles}
@@ -555,10 +710,24 @@ export function App() {
         </div>
 
         {/* Right Column: Telemetry Log */}
-        <div className="lg:col-span-1 flex flex-col min-h-0">
-          <CombatLog logs={logs} />
-        </div>
+        {gameState.isTelemetryLogOpen && (
+          <div className="lg:col-span-1 flex flex-col min-h-[300px] lg:min-h-0">
+            <CombatLog logs={logs} onClose={() => setGameState((prev) => ({ ...prev, isTelemetryLogOpen: false }))} />
+          </div>
+        )}
       </main>
+
+      {/* Floating Reopen Button for Telemetry Log when closed */}
+      {!gameState.isTelemetryLogOpen && (
+        <button
+          onClick={() => setGameState((prev) => ({ ...prev, isTelemetryLogOpen: true }))}
+          className="fixed bottom-4 right-4 z-40 bg-slate-900/90 border border-emerald-500/70 text-emerald-300 hover:bg-slate-800 px-3 py-2 rounded-lg text-xs font-bold shadow-2xl backdrop-blur flex items-center gap-2 transition"
+          title="Reopen Cryptanalysis Telemetry Log"
+        >
+          <Terminal className="w-4 h-4 text-emerald-400" />
+          <span>REOPEN LOG ({logs.length})</span>
+        </button>
+      )}
 
       {/* Collapsible Explanatory Slide-out Drawer */}
       <ExplanatoryDrawer

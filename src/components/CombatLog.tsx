@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { CombatLogEntry } from '../types/game';
-import { Terminal, Shield, AlertTriangle, Zap, Activity } from 'lucide-react';
+import { Terminal, Shield, AlertTriangle, Zap, Activity, X } from 'lucide-react';
 
 interface CombatLogProps {
   logs: CombatLogEntry[];
+  onClose?: () => void;
 }
 
-export const CombatLog: React.FC<CombatLogProps> = ({ logs }) => {
+export const CombatLog: React.FC<CombatLogProps> = ({ logs, onClose }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -54,7 +55,18 @@ export const CombatLog: React.FC<CombatLogProps> = ({ logs }) => {
           <Terminal className="w-4 h-4 text-cyan-400" />
           CRYPTANALYSIS TELEMETRY LOG
         </span>
-        <span className="text-[10px] text-emerald-400/80 animate-pulse">● LIVE STREAM</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-emerald-400/80 animate-pulse hidden sm:inline">● LIVE STREAM</span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-100 border border-slate-800 transition min-h-[30px] min-w-[30px] flex items-center justify-center"
+              title="Close / Exit Telemetry Log to expand canvas"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div

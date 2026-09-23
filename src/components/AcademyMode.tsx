@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AcademyChapter } from '../types/game';
-import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Zap, Award, HelpCircle, Wand2 } from 'lucide-react';
+import { BookOpen, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Zap, Award, HelpCircle, Wand2, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
 
 export const ACADEMY_CHAPTERS: AcademyChapter[] = [
   {
@@ -81,6 +81,7 @@ interface AcademyModeProps {
   onOpenDrawer: () => void;
   onCompleteChapter: () => void;
   onAutoSnap?: (val: number) => void;
+  onClose?: () => void;
 }
 
 export const AcademyMode: React.FC<AcademyModeProps> = ({
@@ -89,10 +90,12 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
   onOpenDrawer,
   onCompleteChapter,
   onAutoSnap,
+  onClose,
 }) => {
   const chapter = ACADEMY_CHAPTERS.find((c) => c.id === currentChapterId) || ACADEMY_CHAPTERS[0];
   const [secondsOnTask, setSecondsOnTask] = useState<number>(0);
   const [showHint, setShowHint] = useState<boolean>(false);
+  const [isStudyDetailsCollapsed, setIsStudyDetailsCollapsed] = useState<boolean>(false);
 
   // Reset hint state and timer when chapter changes
   useEffect(() => {
@@ -109,22 +112,34 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col gap-3 font-mono">
+    <div className="flex flex-col gap-2.5 font-mono">
       {/* Chapter Selection Tabs */}
       <div className="bg-slate-900/95 border border-slate-800 rounded-lg p-2.5 backdrop-blur shadow-xl">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-cyan-400" />
             <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
               THE ACADEMY: FIRST-PRINCIPLES MATH COURSE
             </h3>
           </div>
-          <button
-            onClick={onOpenDrawer}
-            className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[44px]"
-          >
-            <Sparkles className="w-3.5 h-3.5" /> OPEN EXPLANATORY DRAWER
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenDrawer}
+              className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[36px]"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> <span className="hidden sm:inline">OPEN</span> DRAWER
+            </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition min-h-[36px]"
+                title="Hide / Exit Lesson Card to focus on the game and canvas"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-cyan-400" />
+                <span>HIDE LESSON</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -150,31 +165,54 @@ export const AcademyMode: React.FC<AcademyModeProps> = ({
       </div>
 
       {/* Chapter Study Card */}
-      <div className="bg-slate-900/95 border border-cyan-500/40 rounded-lg p-3.5 backdrop-blur shadow-xl flex flex-col gap-3">
+      <div className="bg-slate-900/95 border border-cyan-500/40 rounded-lg p-3 backdrop-blur shadow-xl flex flex-col gap-2.5">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div>
+          <div className="flex-1">
             <span className="text-[10px] font-bold uppercase text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
               {chapter.difficultyTag}
             </span>
             <h2 className="text-sm font-bold text-cyan-400 mt-1">{chapter.title}</h2>
             <p className="text-xs text-slate-300">{chapter.subtitle}</p>
           </div>
-          <Award className="w-6 h-6 text-amber-400 shrink-0" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsStudyDetailsCollapsed((prev) => !prev)}
+              className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition text-[10px] flex items-center gap-1 min-h-[36px]"
+              title={isStudyDetailsCollapsed ? 'Expand Study Notes' : 'Collapse Study Notes'}
+            >
+              {isStudyDetailsCollapsed ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">NOTES</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">COLLAPSE</span>
+                </>
+              )}
+            </button>
+            <Award className="w-5 h-5 text-amber-400 shrink-0" />
+          </div>
         </div>
 
-        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col gap-1.5 text-xs">
-          <span className="font-bold text-amber-400 flex items-center gap-1 text-[11px]">
-            <Zap className="w-3.5 h-3.5 text-amber-400" /> PHYSICAL ANALOGY
-          </span>
-          <p className="text-slate-200 text-[11px] leading-relaxed">{chapter.physicalAnalogy}</p>
-        </div>
+        {!isStudyDetailsCollapsed && (
+          <>
+            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1 text-xs">
+              <span className="font-bold text-amber-400 flex items-center gap-1 text-[11px]">
+                <Zap className="w-3.5 h-3.5 text-amber-400" /> PHYSICAL ANALOGY
+              </span>
+              <p className="text-slate-200 text-[11px] leading-relaxed">{chapter.physicalAnalogy}</p>
+            </div>
 
-        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col gap-1.5 text-xs">
-          <span className="font-bold text-emerald-400 flex items-center gap-1 text-[11px]">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> MATHEMATICAL DEFINITION
-          </span>
-          <p className="text-emerald-300 font-mono text-[11px] font-semibold">{chapter.mathDefinition}</p>
-        </div>
+            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1 text-xs">
+              <span className="font-bold text-emerald-400 flex items-center gap-1 text-[11px]">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> MATHEMATICAL DEFINITION
+              </span>
+              <p className="text-emerald-300 font-mono text-[11px] font-semibold">{chapter.mathDefinition}</p>
+            </div>
+          </>
+        )}
 
         {/* Chapter Micro-Task & Anti-Frustration Tools */}
         <div className="bg-slate-950 p-3 rounded-lg border border-cyan-800 flex flex-col gap-2.5 text-xs">

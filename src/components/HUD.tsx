@@ -15,6 +15,10 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowDown,
+  Eye,
+  EyeOff,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -23,6 +27,11 @@ interface HUDProps {
   onToggleAudio: () => void;
   onOpenDrawer: () => void;
   onOpenInstructions: () => void;
+  onToggleAcademyCard?: () => void;
+  onToggleSolverControls?: () => void;
+  onToggleTelemetryLog?: () => void;
+  onToggleBossStats?: () => void;
+  onToggleFocusMode?: () => void;
   onTouchMoveLane?: (direction: 'left' | 'right') => void;
   onTouchJump?: () => void;
   onTouchSlide?: () => void;
@@ -35,6 +44,11 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleAudio,
   onOpenDrawer,
   onOpenInstructions,
+  onToggleAcademyCard,
+  onToggleSolverControls,
+  onToggleTelemetryLog,
+  onToggleBossStats,
+  onToggleFocusMode,
   onTouchMoveLane,
   onTouchJump,
   onTouchSlide,
@@ -86,27 +100,108 @@ export const HUD: React.FC<HUDProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Universal Focus Mode Button */}
+          {onToggleFocusMode && (
+            <button
+              onClick={onToggleFocusMode}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isFocusMode
+                  ? 'bg-purple-950 border-purple-400 text-purple-200 shadow-md'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+              }`}
+              title={gameState.isFocusMode ? 'Exit Canvas Focus (Show Cards)' : 'Enter Canvas Focus (Hide Cards)'}
+            >
+              {gameState.isFocusMode ? (
+                <Minimize2 className="w-4 h-4 text-purple-400" />
+              ) : (
+                <Maximize2 className="w-4 h-4 text-slate-300" />
+              )}
+              <span>{gameState.isFocusMode ? 'EXIT FOCUS' : 'FOCUS VIEW'}</span>
+            </button>
+          )}
+
+          {/* Quick Card Visibility Toggles */}
+          {gameState.appMode === 'academy' && onToggleAcademyCard && (
+            <button
+              onClick={onToggleAcademyCard}
+              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isAcademyCardOpen
+                  ? 'bg-cyan-950/80 border-cyan-500 text-cyan-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title="Toggle Academy Lesson Card visibility"
+            >
+              {gameState.isAcademyCardOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">LESSON</span>
+            </button>
+          )}
+
+          {gameState.appMode === 'solver' && onToggleSolverControls && (
+            <button
+              onClick={onToggleSolverControls}
+              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isSolverControlsOpen
+                  ? 'bg-amber-950/80 border-amber-500 text-amber-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title="Toggle Solver Controls visibility"
+            >
+              {gameState.isSolverControlsOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">CONTROLS</span>
+            </button>
+          )}
+
+          {gameState.appMode === 'boss' && onToggleBossStats && (
+            <button
+              onClick={onToggleBossStats}
+              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isBossStatsOpen
+                  ? 'bg-rose-950/80 border-rose-500 text-rose-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title="Toggle Boss Stats and Touch Controls"
+            >
+              {gameState.isBossStatsOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">STATS</span>
+            </button>
+          )}
+
+          {onToggleTelemetryLog && (
+            <button
+              onClick={onToggleTelemetryLog}
+              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
+                gameState.isTelemetryLogOpen
+                  ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+              title="Toggle Cryptanalysis Telemetry Log visibility"
+            >
+              {gameState.isTelemetryLogOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">LOG</span>
+            </button>
+          )}
+
           {/* Explanatory Drawer Button */}
           <button
             onClick={onOpenDrawer}
-            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded bg-amber-950 border border-amber-800 text-amber-300 hover:bg-amber-900 transition min-h-[44px]"
+            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-amber-950 border border-amber-800 text-amber-300 hover:bg-amber-900 transition min-h-[44px]"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">WHY THIS WORKS</span>
+            <span className="hidden sm:inline">EXPLAIN</span>
           </button>
 
           <button
             onClick={onOpenInstructions}
-            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[44px]"
+            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[44px]"
           >
             <HelpCircle className="w-4 h-4 text-cyan-400" />
-            <span className="hidden sm:inline">HOW TO PLAY</span>
+            <span className="hidden sm:inline">GUIDE</span>
           </button>
 
           <button
             onClick={onToggleAudio}
-            className="p-2.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-cyan-400 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-cyan-400 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Toggle Audio"
           >
             {gameState.audioMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
@@ -115,7 +210,25 @@ export const HUD: React.FC<HUDProps> = ({
       </div>
 
       {/* Telemetry & Virtual Touch Controls Bar for Boss Mode */}
-      {gameState.appMode === 'boss' && (
+      {gameState.appMode === 'boss' && !gameState.isBossStatsOpen && (
+        <div className="bg-slate-900/90 border border-rose-500/40 rounded-lg p-2 backdrop-blur flex items-center justify-between shadow-lg text-xs font-mono">
+          <div className="flex items-center gap-3">
+            <span className="text-cyan-400 font-bold">LEVIATHAN: {Math.max(0, Math.round(gameState.bossHp))} DIM</span>
+            <span className="text-emerald-400 font-bold">SHIELD: {Math.max(0, Math.round(gameState.playerHp))} HP</span>
+            <span className="text-amber-400 font-bold">{Math.round(gameState.score)} PTS</span>
+          </div>
+          {onToggleBossStats && (
+            <button
+              onClick={onToggleBossStats}
+              className="text-xs font-bold px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-slate-950 flex items-center gap-1 min-h-[36px]"
+            >
+              <Maximize2 className="w-3.5 h-3.5" /> REOPEN STATS & CONTROLS
+            </button>
+          )}
+        </div>
+      )}
+
+      {gameState.appMode === 'boss' && gameState.isBossStatsOpen && (
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 backdrop-blur shadow-xl">
             <div className="flex flex-col gap-1">
