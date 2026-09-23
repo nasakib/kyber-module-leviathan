@@ -18,8 +18,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { m: 0.5, b: 0.0 },
     solutionParams: { m: 1.0, b: 1.0 },
     paramControls: [
-      { key: 'm', label: 'Slope', symbol: 'm', min: -5, max: 5, step: 0.25, defaultValue: 0.5, description: 'Rate of change: Δy / Δx (rise over run)' },
-      { key: 'b', label: 'Y-Intercept', symbol: 'b', min: -6, max: 6, step: 0.5, defaultValue: 0.0, description: 'Point where the beam crosses the vertical y-axis (0, b)' }
+      {
+        key: 'm',
+        label: 'Slope (Rate of Change)',
+        symbol: 'm = \\frac{\\Delta y}{\\Delta x}',
+        min: -5,
+        max: 5,
+        step: 0.1,
+        defaultValue: 0.5,
+        description: 'Rate of vertical change per horizontal unit',
+        mathMeaning: 'm = \\frac{y_2 - y_1}{x_2 - x_1}',
+        geometricRole: 'Tilts the trajectory beam angle of ascent/descent',
+        objectiveHint: 'Target α is at (2, 3) and β at (6, 7). Required slope is (7 - 3) / (6 - 2) = 1.00. Tuning m = 1.00 aligns the beam angle.'
+      },
+      {
+        key: 'b',
+        label: 'Y-Intercept (Vertical Shift)',
+        symbol: 'b = y(0)',
+        min: -6,
+        max: 6,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Point where the beam crosses the vertical y-axis (0, b)',
+        mathMeaning: 'y - mx = b',
+        geometricRole: 'Translates the entire line up or down without altering its angle',
+        objectiveHint: 'Substitute Target α (2, 3) into y = 1.00x + b: 3 = 1(2) + b -> b = 1.00. Tuning b = 1.00 threads the beam through both nodes.'
+      }
     ],
     targets: [
       { id: 't1', x: 2, y: 3, radius: 0.5, label: 'Node α (2, 3)' },
@@ -79,8 +103,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { m: 1.0, b: 0.0 },
     solutionParams: { m: 0.5, b: 2.0 },
     paramControls: [
-      { key: 'm', label: 'Emitter Slope', symbol: 'm', min: -3, max: 3, step: 0.25, defaultValue: 1.0, description: 'Incoming beam slope hitting mirror' },
-      { key: 'b', label: 'Emitter Intercept', symbol: 'b', min: -5, max: 5, step: 0.5, defaultValue: 0.0, description: 'Incoming beam y-intercept' }
+      {
+        key: 'm',
+        label: 'Emitter Slope',
+        symbol: 'm_1 = \\frac{\\Delta y_1}{\\Delta x_1}',
+        min: -3,
+        max: 3,
+        step: 0.1,
+        defaultValue: 1.0,
+        description: 'Slope of primary beam approaching the mirror',
+        mathMeaning: 'm_1 = -\\frac{1}{m_2}',
+        geometricRole: 'Sets the incoming trajectory angle to reflect orthogonally',
+        objectiveHint: 'Target Ω needs reflected slope m₂ = (8 - 4) / (2 - 4) = -2.00. Its orthogonal negative reciprocal is m₁ = -1/(-2) = 0.50.'
+      },
+      {
+        key: 'b',
+        label: 'Emitter Intercept',
+        symbol: 'b_1 = y(0)',
+        min: -5,
+        max: 5,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Incoming beam y-intercept at x = 0',
+        mathMeaning: 'b_1 = y_{mirror} - m_1 x_{mirror}',
+        geometricRole: 'Translates the incoming laser vertically so it hits the mirror center',
+        objectiveHint: 'With m₁ = 0.50, plug in mirror (4, 4): 4 = 0.5(4) + b₁ -> b₁ = 2.00. This delivers the beam into the deflector at (4, 4).'
+      }
     ],
     targets: [
       { id: 'mirror', x: 4, y: 4, radius: 0.45, label: 'Deflector (4, 4)' },
@@ -141,8 +189,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { m: 1.0, b: 2.0 },
     solutionParams: { m: -1.0, b: 8.0 },
     paramControls: [
-      { key: 'm', label: 'Laser B Slope', symbol: 'm₂', min: -4, max: 4, step: 0.5, defaultValue: 1.0, description: 'Slope of Laser B' },
-      { key: 'b', label: 'Laser B Intercept', symbol: 'b₂', min: 0, max: 12, step: 0.5, defaultValue: 2.0, description: 'Intercept of Laser B' }
+      {
+        key: 'm',
+        label: 'Laser B Slope',
+        symbol: 'm_2',
+        min: -4,
+        max: 4,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Slope of controllable Laser B',
+        mathMeaning: 'm_2 = \\frac{y_{core} - b_2}{x_{core}}',
+        geometricRole: 'Rotates Laser B around the y-intercept axis',
+        objectiveHint: 'Laser A intersects Core (3, 5). Setting m₂ = -1.00 forms a clean transverse convergence on the sensor.'
+      },
+      {
+        key: 'b',
+        label: 'Laser B Intercept',
+        symbol: 'b_2',
+        min: 0,
+        max: 12,
+        step: 0.25,
+        defaultValue: 2.0,
+        description: 'Height of Laser B at x = 0',
+        mathMeaning: 'b_2 = y_{core} - m_2 x_{core}',
+        geometricRole: 'Shifts Laser B vertically to pass through point (3, 5)',
+        objectiveHint: 'For m₂ = -1.00: 5 = -1(3) + b₂ -> b₂ = 8.00. Tuning b₂ = 8.00 locks the intersection point onto the core node.'
+      }
     ],
     targets: [
       { id: 'core', x: 3, y: 5, radius: 0.5, label: 'Core Node (3, 5)' }
@@ -203,8 +275,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { m: 1.0, b: 0.0 },
     solutionParams: { m: 2.0, b: 1.0 },
     paramControls: [
-      { key: 'm', label: 'Beam Slope', symbol: 'm', min: -4, max: 4, step: 0.25, defaultValue: 1.0, description: 'Unified slope' },
-      { key: 'b', label: 'Y-Intercept', symbol: 'b', min: -5, max: 5, step: 0.5, defaultValue: 0.0, description: 'Unified intercept' }
+      {
+        key: 'm',
+        label: 'Unified Slope',
+        symbol: 'm = \\frac{\\Delta y}{\\Delta x}',
+        min: -4,
+        max: 4,
+        step: 0.1,
+        defaultValue: 1.0,
+        description: 'Common slope through all three gates',
+        mathMeaning: 'm = \\frac{\\Delta y_{12}}{\\Delta x_{12}} = \\frac{\\Delta y_{23}}{\\Delta x_{23}}',
+        geometricRole: 'Steers the trajectory angle to match the collinear axis of all three gates',
+        objectiveHint: 'Difference between Gate 1 (-2, -3) and Gate 2 (1, 3) is 6 / 3 = 2.00. Setting m = 2.00 aligns the beam with all 3 gates.'
+      },
+      {
+        key: 'b',
+        label: 'Unified Intercept',
+        symbol: 'b = y(0)',
+        min: -5,
+        max: 5,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Vertical height of the beam at origin x = 0',
+        mathMeaning: 'b = y - mx',
+        geometricRole: 'Lifts the line vertically to thread the gates without colliding with side absorbers',
+        objectiveHint: 'Substitute Gate 2 (1, 3) with m = 2: 3 = 2(1) + b -> b = 1.00. Beam y = 2x + 1 clears all 3 gates simultaneously.'
+      }
     ],
     targets: [
       { id: 'gate1', x: -2, y: -3, radius: 0.45, label: 'Gate 1 (-2, -3)' },
@@ -270,9 +366,45 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: -0.2, h: 2.0, k: 4.0 },
     solutionParams: { a: -0.444, h: 3.0, k: 5.0 },
     paramControls: [
-      { key: 'a', label: 'Curvature (a)', symbol: 'a', min: -1.5, max: -0.1, step: 0.05, defaultValue: -0.2, description: 'Negative: opens downward. Magnitude: steepness of parabola' },
-      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: 0, max: 6, step: 0.5, defaultValue: 2.0, description: 'Horizontal coordinate of maximum peak' },
-      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 2, max: 8, step: 0.5, defaultValue: 4.0, description: 'Peak maximum height of trajectory' }
+      {
+        key: 'a',
+        label: 'Curvature Factor',
+        symbol: 'a',
+        min: -1.5,
+        max: -0.1,
+        step: 0.02,
+        defaultValue: -0.2,
+        description: 'Parabolic spread and gravitational descent rate',
+        mathMeaning: 'y - k = a(x - h)^2 \\implies a = \\frac{y - k}{(x - h)^2}',
+        geometricRole: 'Steepens or flattens the parabola trajectory width',
+        objectiveHint: 'With apex (3, 5), Target Beta (6, 1) requires a = (1 - 5) / (6 - 3)² = -4/9 ≈ -0.44. Tuning a = -0.44 drops the arc precisely onto the receptor.'
+      },
+      {
+        key: 'h',
+        label: 'Apex Horizontal (h)',
+        symbol: 'h',
+        min: 0,
+        max: 6,
+        step: 0.25,
+        defaultValue: 2.0,
+        description: 'X-coordinate of the trajectory summit',
+        mathMeaning: 'x_{\\text{apex}} = h',
+        geometricRole: 'Slides the entire parabolic arch horizontally left and right',
+        objectiveHint: 'The barrier pillar and Apex Node are at x = 3. Setting h = 3.00 aligns the peak directly above the barrier.'
+      },
+      {
+        key: 'k',
+        label: 'Apex Altitude (k)',
+        symbol: 'k',
+        min: 2,
+        max: 8,
+        step: 0.25,
+        defaultValue: 4.0,
+        description: 'Maximum vertical apogee height',
+        mathMeaning: 'y_{\\max} = k',
+        geometricRole: 'Lifts or lowers the trajectory peak vertically',
+        objectiveHint: 'The barrier height is 3 and Apex Node is at y = 5. Setting k = 5.00 clears the barrier and neutralizes the Apex Node.'
+      }
     ],
     targets: [
       { id: 'peak', x: 3, y: 5, radius: 0.45, label: 'Apex Node (3, 5)' },
@@ -333,9 +465,45 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: -0.2, h: 1.0, k: 3.0 },
     solutionParams: { a: -0.5, h: 1.0, k: 4.5 },
     paramControls: [
-      { key: 'a', label: 'Leading Coeff (a)', symbol: 'a', min: -1.2, max: -0.1, step: 0.05, defaultValue: -0.2, description: 'Scale factor' },
-      { key: 'h', label: 'Axis of Symmetry (h)', symbol: 'h', min: -1, max: 3, step: 0.5, defaultValue: 1.0, description: 'Midpoint of roots: (r₁ + r₂)/2' },
-      { key: 'k', label: 'Peak Height (k)', symbol: 'k', min: 2, max: 7, step: 0.5, defaultValue: 3.0, description: 'Maximum height y(h)' }
+      {
+        key: 'a',
+        label: 'Leading Coefficient (a)',
+        symbol: 'a',
+        min: -1.2,
+        max: -0.1,
+        step: 0.02,
+        defaultValue: -0.2,
+        description: 'Parabola dilation and vertical scale',
+        mathMeaning: 'y = a(x - r_1)(x - r_2) \\implies a = \\frac{y}{(x - r_1)(x - r_2)}',
+        geometricRole: 'Expands or compresses the trajectory peak height without shifting the root zero crossings',
+        objectiveHint: 'For roots r₁ = -2 and r₂ = 4, evaluating target (1, 4.5) requires 4.5 = a(3)(-3) = -9a -> a = -0.50.'
+      },
+      {
+        key: 'h',
+        label: 'Symmetry Axis (h)',
+        symbol: 'h = \\frac{r_1 + r_2}{2}',
+        min: -1,
+        max: 3,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Midpoint between ground root slits',
+        mathMeaning: 'x_{\\text{axis}} = \\frac{r_1 + r_2}{2}',
+        geometricRole: 'Horizontally centers the trajectory equidistant between the two ground slits',
+        objectiveHint: 'Roots are at x = -2 and x = 4. The midpoint is (-2 + 4) / 2 = 1.00. Tuning h = 1.00 threads both clearance slits.'
+      },
+      {
+        key: 'k',
+        label: 'Peak Height (k)',
+        symbol: 'k = y(h)',
+        min: 2,
+        max: 7,
+        step: 0.25,
+        defaultValue: 3.0,
+        description: 'Summit apogee altitude at x = h',
+        mathMeaning: 'k = -a \\left(\\frac{r_2 - r_1}{2}\\right)^2',
+        geometricRole: 'Sets apex elevation so the top of the arc strikes Receptor γ',
+        objectiveHint: 'Target Receptor γ is at (1, 4.5). Because x = 1 is the symmetry line, setting k = 4.50 strikes the receptor directly at apogee.'
+      }
     ],
     targets: [
       { id: 'slit1', x: -2, y: 0, radius: 0.45, label: 'Root Gate 1 (-2, 0)' },
@@ -352,32 +520,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'CCSS.MATH.CONTENT.HSA.APR.B.3',
       standardName: 'Identify Zeros of Polynomials & Quadratic Factored Form',
       topicCategory: 'Algebra II',
-      intuition: 'A parabola crossing the horizontal axis at x = r₁ and x = r₂ has the factored form y = a(x - r₁)(x - r₂). By symmetry, the vertex must sit exactly at the average of the two roots: h = (r₁ + r₂)/2.',
+      intuition: 'A parabola crossing the horizontal axis at $x = r_1$ and $x = r_2$ has factored form $y = a(x - r_1)(x - r_2)$. By symmetry, the vertex must sit exactly at the average of the two roots: $h = \\frac{r_1 + r_2}{2}$.',
       keyFormulaLatex: 'y = a(x - r_1)(x - r_2), \\quad h = \\frac{r_1 + r_2}{2}',
       stepByStepSolution: [
         {
           stepNumber: 1,
           label: 'Find Axis of Symmetry (h)',
           mathExpression: 'h = \\frac{-2 + 4}{2} = \\frac{2}{2} = 1.0',
-          explanation: 'The roots are r₁ = -2 and r₂ = 4. The midpoint is x = 1.0.'
+          explanation: 'The roots are $r_1 = -2$ and $r_2 = 4$. The symmetry midpoint is $x = 1.0$.'
         },
         {
           stepNumber: 2,
           label: 'Write Factored Form with Target (1, 4.5)',
           mathExpression: 'y = a(x + 2)(x - 4) \\implies 4.5 = a(1 + 2)(1 - 4)',
-          explanation: 'Substitute point (1, 4.5) into the equation.'
+          explanation: 'Substitute point $(1, 4.5)$ into the factored equation.'
         },
         {
           stepNumber: 3,
           label: 'Solve for Leading Coefficient (a)',
           mathExpression: '4.5 = a(3)(-3) = -9a \\implies a = -\\frac{4.5}{9} = -0.5',
-          explanation: 'Leading coefficient is a = -0.5, giving peak height k = 4.5.'
+          explanation: 'Leading coefficient is $a = -0.5$, giving peak summit $k = 4.5$.'
         }
       ],
       formulaBreakdown: [
-        { symbol: 'r₁, r₂', name: 'Roots / Zeros', role: 'X-intercepts where y = 0 (-2 and 4)' },
-        { symbol: 'h = 1', name: 'Midpoint Symmetry', role: 'Center line of the parabola', currentValueKey: 'h' },
-        { symbol: 'a = -0.5', name: 'Scale Factor', role: 'Flattens or steepens trajectory', currentValueKey: 'a' }
+        { symbol: 'r_1, r_2', name: 'Roots / Zeros', role: 'X-intercepts where $y = 0$ ($-2$ and $4$)' },
+        { symbol: 'h = \\frac{r_1+r_2}{2}', name: 'Midpoint Symmetry', role: 'Center axis of the parabola', currentValueKey: 'h' },
+        { symbol: 'a', name: 'Scale Factor', role: 'Flattens or steepens trajectory curve', currentValueKey: 'a' }
       ]
     },
     hints: [
@@ -399,9 +567,45 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: 0.1, h: 0.0, k: 0.0 },
     solutionParams: { a: 0.25, h: 2.0, k: 2.0 },
     paramControls: [
-      { key: 'a', label: 'Curvature (a)', symbol: 'a', min: 0.1, max: 1.0, step: 0.05, defaultValue: 0.1, description: 'Positive: opens upward' },
-      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: -2, max: 5, step: 0.5, defaultValue: 0.0, description: 'X-coordinate of vertex' },
-      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 0, max: 4, step: 0.5, defaultValue: 0.0, description: 'Y-coordinate of vertex' }
+      {
+        key: 'a',
+        label: 'Curvature (a)',
+        symbol: 'a = \\frac{1}{4p}',
+        min: 0.05,
+        max: 1.0,
+        step: 0.01,
+        defaultValue: 0.1,
+        description: 'Inversely controls focal distance p = 1 / (4a)',
+        mathMeaning: 'p = \\frac{1}{4a} \\implies a = \\frac{1}{4p}',
+        geometricRole: 'Flattens dish to project focal point higher, or steepens dish to pull focus closer',
+        objectiveHint: 'For base k = 2 and Core focus at y = 3, focal distance is p = 3 - 2 = 1.00. Setting a = 1 / (4 · 1.00) = 0.25 focuses the beam onto the core.'
+      },
+      {
+        key: 'h',
+        label: 'Dish Center (h)',
+        symbol: 'h',
+        min: -2,
+        max: 5,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'X-coordinate of the reflector base',
+        mathMeaning: 'x_{\\text{focus}} = h',
+        geometricRole: 'Horizontally positions the focal line',
+        objectiveHint: 'Core Focus is at x = 2. Setting h = 2.00 aligns the dish axis directly underneath the receptor.'
+      },
+      {
+        key: 'k',
+        label: 'Dish Base (k)',
+        symbol: 'k',
+        min: 0,
+        max: 4,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Altitude of the reflector vertex base',
+        mathMeaning: 'y_{\\text{focus}} = k + \\frac{1}{4a}',
+        geometricRole: 'Raises or lowers the dish base and focus',
+        objectiveHint: 'Setting k = 2.00 grounds the dish base onto Base Node (2, 2) and lifts focus to 2 + 1 = 3.'
+      }
     ],
     targets: [
       { id: 'focus_core', x: 2, y: 3, radius: 0.5, label: 'Energy Core Focus (2, 3)' },
@@ -462,9 +666,45 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: -0.5, h: 1.0, k: 4.0 },
     solutionParams: { a: -1.0, h: 2.0, k: 6.0 },
     paramControls: [
-      { key: 'a', label: 'Quadratic Coeff (a)', symbol: 'a', min: -2.0, max: -0.2, step: 0.1, defaultValue: -0.5, description: 'Vertical acceleration' },
-      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: 0, max: 4, step: 0.5, defaultValue: 1.0, description: 'Symmetry axis' },
-      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 3, max: 8, step: 0.5, defaultValue: 4.0, description: 'Peak altitude' }
+      {
+        key: 'a',
+        label: 'Acceleration Coeff (a)',
+        symbol: 'a',
+        min: -2.0,
+        max: -0.2,
+        step: 0.05,
+        defaultValue: -0.5,
+        description: 'Gravitational acceleration coefficient',
+        mathMeaning: 'a = \\frac{y - k}{(x - h)^2}',
+        geometricRole: 'Adjusts steepness of descent from summit apogee',
+        objectiveHint: 'For apex (2, 6) and baseline (0, 2), 2 = a(-2)² + 6 -> 4a = -4 -> a = -1.00. Tuning a = -1.00 threads all 3 sensors.'
+      },
+      {
+        key: 'h',
+        label: 'Midpoint Axis (h)',
+        symbol: 'h = \\frac{x_1 + x_3}{2}',
+        min: 0,
+        max: 4,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Symmetry center between sensors 1 and 3',
+        mathMeaning: 'h = \\frac{0 + 4}{2} = 2.0',
+        geometricRole: 'Centers the flight parabola horizontally',
+        objectiveHint: 'Sensors 1 and 3 sit symmetrically at x = 0 and x = 4. The midpoint is h = 2.00, aligning with Sensor 2.'
+      },
+      {
+        key: 'k',
+        label: 'Summit Altitude (k)',
+        symbol: 'k',
+        min: 3,
+        max: 8,
+        step: 0.25,
+        defaultValue: 4.0,
+        description: 'Peak apogee height',
+        mathMeaning: 'k = y(2)',
+        geometricRole: 'Elevates trajectory crest to match Sensor 2',
+        objectiveHint: 'Sensor 2 is located at (2, 6). Setting k = 6.00 triggers Sensor 2 directly at peak apogee without hitting the ceiling.'
+      }
     ],
     targets: [
       { id: 'p1', x: 0, y: 2, radius: 0.45, label: 'Sensor 1 (0, 2)' },
@@ -479,7 +719,7 @@ export const ALL_LEVELS: LevelDefinition[] = [
       standard: 'CCSS.MATH.CONTENT.HSA.CED.A.2',
       standardName: 'Quadratic Curve Fitting & Boundary Conditions',
       topicCategory: 'Algebra II / Precalculus',
-      intuition: 'Three non-collinear points uniquely determine a single parabola. Symmetry between (0, 2) and (4, 2) guarantees that the vertex x-coordinate must be exactly midway at h = 2.',
+      intuition: 'Three non-collinear points uniquely determine a single parabola. Symmetry between $(0, 2)$ and $(4, 2)$ guarantees that the vertex x-coordinate must be exactly midway at $h = 2$.',
       keyFormulaLatex: 'y = a(x - h)^2 + k, \\quad y = -x^2 + 4x + 2',
       stepByStepSolution: [
         {
@@ -530,10 +770,58 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
     solutionParams: { a: 2.0, b: -1.0, c: 1.0, d: 3.0 },
     paramControls: [
-      { key: 'a', label: 'M₁₁ (î_x)', symbol: 'a', min: -3, max: 4, step: 0.5, defaultValue: 1.0, description: 'Where î lands on x-axis' },
-      { key: 'c', label: 'M₂₁ (î_y)', symbol: 'c', min: -3, max: 4, step: 0.5, defaultValue: 0.0, description: 'Where î lands on y-axis' },
-      { key: 'b', label: 'M₁₂ (ĵ_x)', symbol: 'b', min: -3, max: 4, step: 0.5, defaultValue: 0.0, description: 'Where ĵ lands on x-axis' },
-      { key: 'd', label: 'M₂₂ (ĵ_y)', symbol: 'd', min: -3, max: 4, step: 0.5, defaultValue: 1.0, description: 'Where ĵ lands on y-axis' }
+      {
+        key: 'a',
+        label: 'T(î)_x (Col 1 Row 1)',
+        symbol: 'M_{11} = a',
+        min: -3,
+        max: 4,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Landing X coordinate of unit vector î = [1, 0]ᵀ',
+        mathMeaning: 'T(\\hat{i})_x = a',
+        geometricRole: 'Stretches/compresses the horizontal basis vector î along the x-axis',
+        objectiveHint: 'Dock Pin 1 requires T(î) = [2, 1]ᵀ. Set a = 2.00 to align î horizontally.'
+      },
+      {
+        key: 'c',
+        label: 'T(î)_y (Col 1 Row 2)',
+        symbol: 'M_{21} = c',
+        min: -3,
+        max: 4,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Landing Y coordinate of unit vector î = [1, 0]ᵀ',
+        mathMeaning: 'T(\\hat{i})_y = c',
+        geometricRole: 'Shears/rotates the basis vector î vertically along the y-axis',
+        objectiveHint: 'Dock Pin 1 requires T(î) = [2, 1]ᵀ. Set c = 1.00 to complete î landing onto Pin 1.'
+      },
+      {
+        key: 'b',
+        label: 'T(ĵ)_x (Col 2 Row 1)',
+        symbol: 'M_{12} = b',
+        min: -3,
+        max: 4,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Landing X coordinate of unit vector ĵ = [0, 1]ᵀ',
+        mathMeaning: 'T(\\hat{j})_x = b',
+        geometricRole: 'Shears basis vector ĵ horizontally',
+        objectiveHint: 'Dock Pin 2 requires T(ĵ) = [-1, 3]ᵀ. Set b = -1.00 to tilt ĵ leftward.'
+      },
+      {
+        key: 'd',
+        label: 'T(ĵ)_y (Col 2 Row 2)',
+        symbol: 'M_{22} = d',
+        min: -3,
+        max: 4,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Landing Y coordinate of unit vector ĵ = [0, 1]ᵀ',
+        mathMeaning: 'T(\\hat{j})_y = d',
+        geometricRole: 'Stretches basis vector ĵ vertically',
+        objectiveHint: 'Dock Pin 2 requires T(ĵ) = [-1, 3]ᵀ. Set d = 3.00 to lock ĵ directly onto Pin 2.'
+      }
     ],
     targets: [
       { id: 'pin1', x: 2, y: 1, radius: 0.45, label: 'Dock Pin 1: T(î) = [2, 1]' },
@@ -592,7 +880,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
     solutionParams: { a: 1.0, b: 1.5, c: 0.0, d: 1.0 },
     paramControls: [
-      { key: 'b', label: 'Shear Factor (k)', symbol: 'k', min: -2, max: 3, step: 0.25, defaultValue: 0.0, description: 'Horizontal displacement proportional to y' }
+      {
+        key: 'b',
+        label: 'Shear Factor (k)',
+        symbol: 'k',
+        min: -2,
+        max: 3,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Horizontal displacement proportional to y',
+        mathMeaning: 'S_x(k) = \\begin{bmatrix} 1 & k \\\\ 0 & 1 \\end{bmatrix}',
+        geometricRole: 'Slides horizontal lines parallel to the x-axis proportional to height y without changing area or vertical height',
+        objectiveHint: 'The Shear Gate is at [2.5, 1.0]. Because vertex (1, 1) transforms to [1 + k, 1], set k = 1.50 so 1 + 1.50 = 2.50 to slide through the gate.'
+      }
     ],
     targets: [
       { id: 'target_shear', x: 2.5, y: 1.0, radius: 0.45, label: 'Shear Gate [1+k, 1] = [2.5, 1]' }
@@ -651,7 +951,20 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
     solutionParams: { a: 0.707, b: -0.707, c: 0.707, d: 0.707 },
     paramControls: [
-      { key: 'theta_deg', label: 'Rotation Angle (θ)', symbol: 'θ', min: 0, max: 360, step: 15, defaultValue: 0, unit: '°', description: 'Counter-clockwise angle of rotation' }
+      {
+        key: 'theta_deg',
+        label: 'Rotation Angle (θ)',
+        symbol: '\\theta',
+        min: 0,
+        max: 360,
+        step: 5,
+        defaultValue: 0,
+        unit: '°',
+        description: 'Counter-clockwise angle of rotation',
+        mathMeaning: 'R(\\theta) = \\begin{bmatrix} \\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta \\end{bmatrix}',
+        geometricRole: 'Rotates the coordinate axes counter-clockwise while preserving vector lengths and perpendicular 90° angles (orthogonal isometry)',
+        objectiveHint: 'Satellite Receiver Pod 1 is at [1.414, 1.414] along the 45° diagonal line. Increasing θ to 45° perfectly aligns all four basis arms with the receiver pods.'
+      }
     ],
     targets: [
       { id: 'pod1', x: 1.414, y: 1.414, radius: 0.45, label: 'Pod 1 (45°)' },
@@ -711,8 +1024,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
     solutionParams: { a: 2.0, b: 0.0, c: 0.0, d: 2.0 },
     paramControls: [
-      { key: 'a', label: 'Entry a (M₁₁)', symbol: 'a', min: 0.5, max: 4.0, step: 0.5, defaultValue: 1.0, description: 'Row 1 Col 1' },
-      { key: 'd', label: 'Entry d (M₂₂)', symbol: 'd', min: 0.5, max: 4.0, step: 0.5, defaultValue: 1.0, description: 'Row 2 Col 2' }
+      {
+        key: 'a',
+        label: 'Entry a (M₁₁)',
+        symbol: 'M_{11} = a',
+        min: 0.5,
+        max: 4.0,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Row 1 Col 1: Horizontal scaling factor',
+        mathMeaning: 'T(\\hat{i})_x = a, \\quad \\det(M) = ad - bc',
+        geometricRole: 'Stretches the grid horizontally along the x-axis',
+        objectiveHint: 'The target area requires det(M) = 4.00. With d = 2.00, set a = 2.00 so that a · d = 2.00 · 2.00 = 4.00.'
+      },
+      {
+        key: 'd',
+        label: 'Entry d (M₂₂)',
+        symbol: 'M_{22} = d',
+        min: 0.5,
+        max: 4.0,
+        step: 0.25,
+        defaultValue: 1.0,
+        description: 'Row 2 Col 2: Vertical scaling factor',
+        mathMeaning: 'T(\\hat{j})_y = d, \\quad \\det(M) = ad - bc',
+        geometricRole: 'Stretches the grid vertically along the y-axis',
+        objectiveHint: 'The target area requires det(M) = 4.00. With a = 2.00, set d = 2.00 so that a · d = 2.00 · 2.00 = 4.00, hitting Area Target [2, 2].'
+      }
     ],
     targets: [
       { id: 'area_corner', x: 2.0, y: 2.0, radius: 0.5, label: 'Area Target (det = 4)' }
@@ -778,7 +1115,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     calculusDerivative: (x: number) => x,
     calculusFunctionLatex: 'f(x) = 0.5 x^2',
     paramControls: [
-      { key: 'h', label: 'Secant Step (h)', symbol: 'h', min: 0.05, max: 2.5, step: 0.05, defaultValue: 2.0, description: 'Separation between test points' }
+      {
+        key: 'x0',
+        label: 'Tangency Point (x₀)',
+        symbol: 'x_0',
+        min: 0.0,
+        max: 4.0,
+        step: 0.25,
+        defaultValue: 2.0,
+        description: 'Point of evaluation along parabola f(x) = 0.5x²',
+        mathMeaning: 'x_0 \\in \\text{Domain}(f)',
+        geometricRole: 'Anchors the pivot point (x₀, f(x₀)) on the curve',
+        objectiveHint: 'Anchor on the parabola at x₀ = 2.00 where f(2) = 2.00, launching from (2, 2).'
+      },
+      {
+        key: 'h',
+        label: 'Secant Step (h)',
+        symbol: 'h = \\Delta x',
+        min: 0.05,
+        max: 2.5,
+        step: 0.05,
+        defaultValue: 2.0,
+        description: 'Separation between test points Δx',
+        mathMeaning: 'm_{\\text{sec}} = \\frac{f(x_0 + h) - f(x_0)}{h}',
+        geometricRole: 'Controls distance to the second secant sample point; as h → 0, secant pivots into the tangent line',
+        objectiveHint: 'Target Alpha is at (4, 6). Decreasing h to 0.05 causes the secant slope m = 2 + 0.5h to converge to the exact tangent slope f\'(2) = 2.00, cutting through Target Alpha.'
+      }
     ],
     targets: [
       { id: 'target_alpha', x: 4.0, y: 6.0, radius: 0.5, label: 'Target Alpha (4, 6)' }
@@ -846,7 +1208,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     calculusDerivative: (x: number) => 3 * x * x - 3,
     calculusFunctionLatex: 'f(x) = x^3 - 3x',
     paramControls: [
-      { key: 'x0', label: 'Tangency Point (x₀)', symbol: 'x₀', min: -2.5, max: 2.5, step: 0.25, defaultValue: 0.0, description: 'Evaluation coordinate' }
+      {
+        key: 'x0',
+        label: 'Tangency Point (x₀)',
+        symbol: 'x_0',
+        min: -2.5,
+        max: 2.5,
+        step: 0.25,
+        defaultValue: 0.0,
+        description: 'Evaluation coordinate along cubic f(x) = x³ - 3x',
+        mathMeaning: 'f\'(x_0) = 3x_0^2 - 3',
+        geometricRole: 'Position where the tangent laser blade departs the curve along instantaneous velocity vector',
+        objectiveHint: 'Relay Target is located at (2, 2). Since f(2) = 2³ - 3(2) = 2 lies directly on the curve, set x₀ = 2.00 to launch directly through the target with slope f\'(2) = 9.00.'
+      }
     ],
     targets: [
       { id: 'relay_t', x: 2.0, y: 2.0, radius: 0.5, label: 'Relay Target (2, 2)' }
@@ -908,7 +1282,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     calculusDerivative: (x: number) => -3 * x * x + 3,
     calculusFunctionLatex: 'f(x) = -x^3 + 3x',
     paramControls: [
-      { key: 'x0', label: 'Evaluation Point (x₀)', symbol: 'x₀', min: -2.0, max: 2.0, step: 0.25, defaultValue: -0.5, description: 'Position along the curve' }
+      {
+        key: 'x0',
+        label: 'Evaluation Point (x₀)',
+        symbol: 'x_0',
+        min: -2.0,
+        max: 2.0,
+        step: 0.25,
+        defaultValue: -0.5,
+        description: 'Position along the curve f(x) = -x³ + 3x',
+        mathMeaning: 'f\'(x_0) = -3x_0^2 + 3 = 0',
+        geometricRole: 'Shifts tangency point along the curve; at local extrema, tangent line is completely horizontal (slope 0)',
+        objectiveHint: 'The Horizontal Capacitor is at y = 2.00. Set x₀ = 1.00 to hit the local maximum crest where f\'(1) = 0, casting a flat horizontal beam y = 2 into (4, 2).'
+      }
     ],
     targets: [
       { id: 'h_cap', x: 4.0, y: 2.0, radius: 0.5, label: 'Horizontal Capacitor (4, 2)' }
@@ -976,7 +1362,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     calculusDerivative: (x: number) => x * x - 2 * x - 3,
     calculusFunctionLatex: 'f(x) = \\frac{1}{3}x^3 - x^2 - 3x',
     paramControls: [
-      { key: 'x0', label: 'Inflection Point (x₀)', symbol: 'x₀', min: -1.0, max: 3.0, step: 0.25, defaultValue: -0.5, description: 'Evaluation coordinate' }
+      {
+        key: 'x0',
+        label: 'Inflection Point (x₀)',
+        symbol: 'x_0',
+        min: -1.0,
+        max: 3.0,
+        step: 0.25,
+        defaultValue: -0.5,
+        description: 'Evaluation coordinate along f(x) = (1/3)x³ - x² - 3x',
+        mathMeaning: 'f\'\'(x_0) = 2x_0 - 2 = 0',
+        geometricRole: 'Finds the point of zero curvature where the curve flips concavity and tangent line slices through the function',
+        objectiveHint: 'Setting x₀ = 1.00 places the blade at the inflection point f\'\'(1) = 0 with slope f\'(1) = -4.00, shooting the beam straight into Sensor Chi at (3, -11.67).'
+      }
     ],
     targets: [
       { id: 'sensor_chi', x: 3.0, y: -11.67, radius: 0.6, label: 'Sensor Chi (3, -11.67)' }
@@ -1045,7 +1443,19 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { q_factor: 1 },
     solutionParams: { q_factor: 2 },
     paramControls: [
-      { key: 'q_factor', label: 'Reduction Quotient (⌊μ⌉)', symbol: 'q', min: -3, max: 4, step: 1, defaultValue: 1, description: 'Integer multiple: round((v₁ · v₂) / ||v₂||²)' }
+      {
+        key: 'q_factor',
+        label: 'Reduction Quotient (⌊μ⌉)',
+        symbol: 'q = \\lfloor \\mu \\rceil',
+        min: -3,
+        max: 4,
+        step: 1,
+        defaultValue: 1,
+        description: 'Integer multiple: round((v₁ · v₂) / ||v₂||²)',
+        mathMeaning: 'v_1\' = v_1 - q \\cdot v_2, \\quad q = \\left\\lfloor \\frac{v_1 \\cdot v_2}{\\|v_2\\|^2} \\right\\rceil',
+        geometricRole: 'Subtracts nearest integer multiple of basis vector v₂ from v₁ to minimize its length and increase basis orthogonality',
+        objectiveHint: 'v₁ · v₂ = 16 and ||v₂||² = 10, giving projection ratio μ = 1.6. Rounding to q = 2 minimizes the basis vector to [-1, -1]ᵀ, striking the shortest vector target node.'
+      }
     ],
     targets: [
       { id: 'short_v', x: -1, y: -1, radius: 0.45, label: 'Shortest Vector [-1, -1]' }
@@ -1102,8 +1512,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { c1: 0, c2: 0 },
     solutionParams: { c1: 1, c2: 2 },
     paramControls: [
-      { key: 'c1', label: 'Coefficient c₁', symbol: 'c₁', min: -2, max: 4, step: 1, defaultValue: 0, description: 'Integer multiplier for basis vector 1' },
-      { key: 'c2', label: 'Coefficient c₂', symbol: 'c₂', min: -2, max: 4, step: 1, defaultValue: 0, description: 'Integer multiplier for basis vector 2' }
+      {
+        key: 'c1',
+        label: 'Coefficient c₁',
+        symbol: 'c_1',
+        min: -2,
+        max: 4,
+        step: 1,
+        defaultValue: 0,
+        description: 'Integer multiplier for basis vector 1: b₁ = [2, 0]ᵀ',
+        mathMeaning: 'c_1 = \\lfloor (B^{-1} t)_1 \\rceil',
+        geometricRole: 'Discrete integer lattice coordinate scaling the horizontal basis vector b₁',
+        objectiveHint: 'Inverting the basis gives continuous coordinate c₁ = 0.6. Rounding to integer c₁ = 1 strips horizontal channel noise to land on Lattice Node [4, 4].'
+      },
+      {
+        key: 'c2',
+        label: 'Coefficient c₂',
+        symbol: 'c_2',
+        min: -2,
+        max: 4,
+        step: 1,
+        defaultValue: 0,
+        description: 'Integer multiplier for basis vector 2: b₂ = [1, 2]ᵀ',
+        mathMeaning: 'c_2 = \\lfloor (B^{-1} t)_2 \\rceil',
+        geometricRole: 'Discrete integer lattice coordinate scaling the slanted basis vector b₂',
+        objectiveHint: 'From 2c₂ = 4.1, continuous coordinate c₂ = 2.05. Rounding to integer c₂ = 2 cancels vertical perturbation to reach Lattice Node [4, 4].'
+      }
     ],
     targets: [
       { id: 'lattice_node', x: 4.0, y: 4.0, radius: 0.5, label: 'Lattice Node [4, 4]' }
@@ -1166,8 +1600,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { c1: 0, c2: 0 },
     solutionParams: { c1: 2, c2: 1 },
     paramControls: [
-      { key: 'c1', label: 'Signal Vector c₁', symbol: 'c₁', min: -1, max: 4, step: 1, defaultValue: 0, description: 'Basis 1 coordinate' },
-      { key: 'c2', label: 'Signal Vector c₂', symbol: 'c₂', min: -1, max: 4, step: 1, defaultValue: 0, description: 'Basis 2 coordinate' }
+      {
+        key: 'c1',
+        label: 'Carrier Weight s₁',
+        symbol: 's_1',
+        min: -1,
+        max: 4,
+        step: 1,
+        defaultValue: 0,
+        description: 'Carrier sample weight 1 for public vector [2, 1]ᵀ',
+        mathMeaning: 's_1 \\in \\mathbb{Z}_q',
+        geometricRole: 'Integer coefficient multiplying carrier sample a₁ = [2, 1]ᵀ',
+        objectiveHint: 'Target LWE secret is at [5, 3]. Setting s₁ = 2 provides base contribution 2·[2, 1] = [4, 2] toward the uncorrupted message.'
+      },
+      {
+        key: 'c2',
+        label: 'Carrier Weight s₂',
+        symbol: 's_2',
+        min: -1,
+        max: 4,
+        step: 1,
+        defaultValue: 0,
+        description: 'Carrier sample weight 2 for public vector [1, 1]ᵀ',
+        mathMeaning: 's_2 \\in \\mathbb{Z}_q',
+        geometricRole: 'Integer coefficient multiplying carrier sample a₂ = [1, 1]ᵀ',
+        objectiveHint: 'Setting s₂ = 1 adds [1, 1]ᵀ, yielding [4, 2] + [1, 1] = [5, 3]ᵀ to overcome channel noise |e| ≤ 0.8 and decrypt the secret.'
+      }
     ],
     targets: [
       { id: 'lwe_core', x: 5.0, y: 3.0, radius: 0.5, label: 'LWE Secret [5, 3]' }
@@ -1218,8 +1676,32 @@ export const ALL_LEVELS: LevelDefinition[] = [
     defaultParams: { c1: 0, c2: 0 },
     solutionParams: { c1: 1, c2: 1 },
     paramControls: [
-      { key: 'c1', label: 'Secret Key s₁', symbol: 's₁', min: 0, max: 3, step: 1, defaultValue: 0, description: 'Module key entry 1' },
-      { key: 'c2', label: 'Secret Key s₂', symbol: 's₂', min: 0, max: 3, step: 1, defaultValue: 0, description: 'Module key entry 2' }
+      {
+        key: 'c1',
+        label: 'Secret Key s₁',
+        symbol: 's_1',
+        min: 0,
+        max: 3,
+        step: 1,
+        defaultValue: 0,
+        description: 'Module key entry 1 for basis vector [2, 1]ᵀ',
+        mathMeaning: 's_1 \\in R_q',
+        geometricRole: 'First component of the secret key polynomial vector s',
+        objectiveHint: 'The decrypted root key is at [3, 2]. Setting s₁ = 1 activates basis vector [2, 1]ᵀ in the inner product sᵀ A.'
+      },
+      {
+        key: 'c2',
+        label: 'Secret Key s₂',
+        symbol: 's_2',
+        min: 0,
+        max: 3,
+        step: 1,
+        defaultValue: 0,
+        description: 'Module key entry 2 for basis vector [1, 1]ᵀ',
+        mathMeaning: 's_2 \\in R_q',
+        geometricRole: 'Second component of the secret key polynomial vector s',
+        objectiveHint: 'Setting s₂ = 1 adds basis vector [1, 1]ᵀ, completing 1·[2, 1] + 1·[1, 1] = [3, 2]ᵀ and defusing the Leviathan Core.'
+      }
     ],
     targets: [
       { id: 'kyber_root', x: 3.0, y: 2.0, radius: 0.55, label: 'Decrypted Key [3, 2]' }

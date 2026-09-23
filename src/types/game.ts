@@ -65,6 +65,9 @@ export interface ParameterControl {
   unit?: string;
   defaultValue: number;
   description: string;
+  mathMeaning?: string;   // Symbolic LaTeX mathematical definition (e.g. m = \Delta y / \Delta x)
+  geometricRole?: string; // Physical/geometric transformation effect
+  objectiveHint?: string; // Clear explanation of why changing this operator satisfies the level goal
 }
 
 export interface LevelDefinition {
