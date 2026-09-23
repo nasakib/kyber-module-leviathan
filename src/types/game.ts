@@ -1,286 +1,127 @@
-export type AppMode = 'curriculum' | 'academy' | 'solver' | 'boss';
+// VectorForge: The Coordinate Engine - Core Type Definitions
 
-export interface RosettaRow {
+export type SectorId = 'linear' | 'parabola' | 'matrix' | 'calculus' | 'lattice';
+
+export type LevelType = 
+  | 'linear_beam'       // y = mx + b, reflections, systems
+  | 'parabolic_arc'     // y = a(x-h)^2 + k, roots, focus
+  | 'matrix_warp'       // 2x2 linear transformations, shear, rotation, det
+  | 'tangent_blade'     // secants, tangent lines, derivatives, critical points
+  | 'lattice_cvp';      // discrete 2D lattice, reduction, noisy decryption
+
+export interface TargetNode {
   id: string;
-  algebraConcept: string;
-  canvasElement: string;
-  symbolicMath: string;
-  plainEnglish: string;
-  highlightKey?: string;
+  x: number;
+  y: number;
+  radius: number;
+  hit?: boolean;
+  requiredOrder?: number;
+  label?: string;
+  subLabel?: string;
 }
 
-export interface DerivationStep {
+export interface Obstacle {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: 'shield' | 'absorber' | 'reflector';
+  normal?: [number, number]; // for reflector angle, e.g. [-1, 1] for 45 deg
+  label?: string;
+}
+
+export interface DerivationStepItem {
   stepNumber: number;
   label: string;
-  algebraicLine: string;
-  computedLine?: (params: Record<string, number>) => string;
-  whyItWorks: string;
-}
-
-export type QuizQuestionType = 'visual_prediction' | 'misconception_trap' | 'symbolic_calc';
-
-export interface QuizQuestion {
-  id: string;
-  type: QuizQuestionType;
-  prompt: string;
-  subtitle?: string;
-  options: string[];
-  correctIndex: number;
+  mathExpression: string;
   explanation: string;
-  hint?: string;
 }
 
-export interface Lesson {
+export interface FormulaSymbolItem {
+  symbol: string;
+  name: string;
+  role: string;
+  currentValueKey?: string;
+}
+
+export interface CurriculumContent {
+  standard: string;          // e.g. "CCSS.MATH.CONTENT.HSA.CED.A.2" or "AP Calc CHA-2"
+  standardName: string;      // e.g. "Creating Linear Equations in Two Variables"
+  topicCategory: string;     // e.g. "Algebra I", "AP Calculus AB", "Linear Algebra"
+  intuition: string;         // Plain-English physical mechanical rationale
+  stepByStepSolution: DerivationStepItem[];
+  formulaBreakdown: FormulaSymbolItem[];
+  keyFormulaLatex: string;
+}
+
+export interface ParameterControl {
+  key: string;
+  label: string;
+  symbol: string;
+  min: number;
+  max: number;
+  step: number;
+  unit?: string;
+  defaultValue: number;
+  description: string;
+}
+
+export interface LevelDefinition {
   id: string;
+  sectorId: SectorId;
+  sectorTitle: string;
+  levelNumber: number; // 1 to 4
+  code: string;        // e.g. "1.1", "4.3"
   title: string;
   subtitle: string;
-  rosettaRows: RosettaRow[];
-  derivation: {
-    title: string;
-    description: string;
-    parameterName: string;
-    parameterLabel: string;
-    parameterDefault: number;
-    parameterMin: number;
-    parameterMax: number;
-    parameterStep: number;
-    steps: DerivationStep[];
+  description: string;
+  type: LevelType;
+  defaultParams: Record<string, number>;
+  paramControls: ParameterControl[];
+  targets: TargetNode[];
+  obstacles: Obstacle[];
+  bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
   };
-  quiz: QuizQuestion[];
-  interactiveMode: 'derivatives' | 'riemann' | 'matrix_stretch' | 'lattice_discrete';
-  defaultCurve?: { a: number; b: number; c: number };
+  curriculum: CurriculumContent;
+  hints: string[];
+  // Solution criteria or exact answer representation for auto-calc
+  solutionParams: Record<string, number>;
+  // Custom curve formula for calculus levels
+  calculusFunction?: (x: number) => number;
+  calculusDerivative?: (x: number) => number;
+  calculusFunctionLatex?: string;
 }
 
-export interface CurriculumModule {
-  id: string;
-  title: string;
-  description: string;
-  tag: string;
-  iconName: string;
-  lessons: Lesson[];
+export interface UserLevelProgress {
+  completed: boolean;
+  stars: number;        // 1, 2, or 3
+  bestAttempts: number;
+  unlocked: boolean;
 }
 
-export interface CurriculumProgress {
-  completedLessons: string[];
-  quizScores: Record<string, { score: number; maxScore: number; timestamp: number }>;
-  currentModuleId: string;
-  currentLessonId: string;
-}
+export type UserProgressStore = Record<string, UserLevelProgress>;
 
-export interface Vector2D {
+export type AppMode = 'puzzle' | 'sandbox';
+
+export type SandboxMode = 'linear' | 'parabola' | 'matrix' | 'calculus' | 'lattice';
+
+export interface TrajectoryPoint {
   x: number;
   y: number;
+  hitTargetId?: string;
+  hitObstacleId?: string;
+  isReflected?: boolean;
 }
 
-export interface Matrix2D {
-  b1: Vector2D;
-  b2: Vector2D;
-}
-
-export interface GramSchmidtData {
-  b1Star: Vector2D;
-  b2Star: Vector2D;
-  mu21: number;
-}
-
-export type SolverActionType = 'initial' | 'gram_schmidt' | 'size_reduce' | 'lovasz_swap' | 'complete' | 'babai_cvp';
-
-export interface SolverStep {
-  stepIndex: number;
-  action: SolverActionType;
-  title: string;
-  matrix: Matrix2D;
-  gsResult: GramSchmidtData;
-  mu: number;
-  b1StarNormSq: number;
-  b2StarNormSq: number;
-  lovaszSatisfied: boolean;
-  explanation: string;
-  formula: string;
-  closestPoint?: Vector2D;
-  errorVector?: Vector2D;
-}
-
-export interface SolverPreset {
-  id: string;
-  name: string;
-  description: string;
-  matrix: Matrix2D;
-  target: Vector2D;
-}
-
-export interface AcademyChapter {
-  id: number;
-  title: string;
-  subtitle: string;
-  conceptTitle: string;
-  difficultyTag: 'Beginner Intuition' | 'Intermediate Geometry' | 'Advanced Optimization' | 'Cryptographic Insight';
-  physicalAnalogy: string;
-  mathDefinition: string;
-  microTask: string;
-  targetValue: number;
-  currentValue: number;
-  unit: string;
-  hint: string;
-}
-
-export type Lane = -1 | 0 | 1;
-export type ShipState = 'normal' | 'jumping' | 'sliding';
-
-export interface RunnerObstacle {
-  id: string;
-  lane: Lane;
-  z: number;
-  type: 'low_barrier' | 'high_gate' | 'full_wall';
-  label: string;
-  color: string;
-}
-
-export interface RunnerPowerUp {
-  id: string;
-  lane: Lane;
-  z: number;
-  type: 'vector_fnet' | 'det_area' | 'grad_v';
-  label: string;
-  color: string;
-}
-
-export type LevelId = 1 | 2 | 3 | 4;
-export type BossPhaseId = 1 | 2 | 3 | 4;
-
-export interface BossPhase {
-  id: BossPhaseId;
-  name: string;
-  subtitle: string;
-  minHpPercent: number;
-  description: string;
-  tacticalTip: string;
-}
-
-export interface Particle {
-  id: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  color: string;
-  size: number;
-  life: number;
-  maxLife: number;
-}
-
-export interface FloatingText {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  color: string;
-  life: number;
-  maxLife: number;
-  fontSize: number;
-}
-
-export type WeaponId = 'kannan' | 'lll' | 'bkz' | 'visor' | 'coolant';
-
-export interface Weapon {
-  id: WeaponId;
-  name: string;
-  simpleName: string;
-  cooldown: number;
-  currentCooldown: number;
-  description: string;
-  simpleGuide: string;
-  shortcut: string;
-  iconName: string;
-}
-
-export interface CombatLogEntry {
-  id: string;
-  timestamp: string;
-  text: string;
-  simpleTranslation?: string;
-  type: 'info' | 'player_action' | 'boss_attack' | 'warning' | 'phase_change' | 'critical';
-}
-
-export interface GameState {
-  // Navigation Mode
-  appMode: AppMode;
-  
-  // Academy Mode State
-  academyChapter: number;
-  academyCompleted: boolean;
-
-  // Solver Lab State
-  solverMatrix: Matrix2D;
-  solverTarget: Vector2D;
-  solverSteps: SolverStep[];
-  currentStepIndex: number;
-  isSolverPlaying: boolean;
-  solverPlaybackSpeed: number; // 0.25, 0.5, 1, 2
-
-  // Explanatory Drawer
-  isDrawerOpen: boolean;
-  interactiveAngle: number;
-
-  // Runner Ship Physics (Boss Mode)
-  shipLane: Lane;
-  shipY: number;
-  shipState: ShipState;
-  speed: number;
-  distance: number;
-  score: number;
-  
-  // Analysis Gate (Boss Mode Checkpoints)
-  isAnalysisGateActive: boolean;
-  gateQuestion: string;
-  gateOptions: string[];
-  correctOptionIndex: number;
-  gateTimer: number; // 8 seconds countdown
-  gateHintUsed: boolean;
-  gateEliminatedOptions: number[];
-
-  obstacles: RunnerObstacle[];
-  powerups: RunnerPowerUp[];
-
-  // Flow & Tutorial Mode
-  isFlowMode: boolean;
-  showInstructionsModal: boolean;
-
-  // Boss
-  bossHp: number;
-  maxBossHp: number;
-  bossPhase: BossPhaseId;
-  bossZ: number;
-  
-  // Player
-  playerHp: number;
-  maxPlayerHp: number;
-  memoryHeat: number;
-  bkzBeta: number;
-  gramSchmidtVisor: boolean;
-  
-  // Combo & Juice
-  comboCount: number;
-  screenShake: number;
-  tacticalHint: string;
-  
-  // Status
-  isGameOver: boolean;
-  isVictory: boolean;
-  
-  // Audio state
-  audioMuted: boolean;
-  audioInitialized: boolean;
-
-  // Curriculum Mode State
-  curriculumModuleId: string;
-  curriculumLessonId: string;
-
-  // UI & Card Visibility Controls
-  isCurriculumCardOpen: boolean;
-  isAcademyCardOpen: boolean;
-  isSolverControlsOpen: boolean;
-  isTelemetryLogOpen: boolean;
-  isBossStatsOpen: boolean;
-  isFocusMode: boolean;
+export interface SimulationResult {
+  path: TrajectoryPoint[];
+  targetsHit: string[];
+  obstaclesCollided: string[];
+  success: boolean;
+  message: string;
 }

@@ -1,0 +1,1268 @@
+// VectorForge: The Coordinate Engine - Comprehensive 20-Level Curriculum Dataset
+import { LevelDefinition } from '../types/game';
+
+export const ALL_LEVELS: LevelDefinition[] = [
+  // ==========================================
+  // SECTOR 1: THE LINEAR GRID (ALGEBRA I)
+  // ==========================================
+  {
+    id: 's1_l1',
+    sectorId: 'linear',
+    sectorTitle: 'Sector 1: The Linear Grid',
+    levelNumber: 1,
+    code: '1.1',
+    title: 'Direct Intercept',
+    subtitle: 'Slope-Intercept Form y = mx + b',
+    description: 'Calibrate the laser emitter slope (m) and y-intercept (b) to thread a continuous beam through two collinear energy nodes.',
+    type: 'linear_beam',
+    defaultParams: { m: 0.5, b: 0.0 },
+    solutionParams: { m: 1.0, b: 1.0 },
+    paramControls: [
+      { key: 'm', label: 'Slope', symbol: 'm', min: -5, max: 5, step: 0.25, defaultValue: 0.5, description: 'Rate of change: Δy / Δx (rise over run)' },
+      { key: 'b', label: 'Y-Intercept', symbol: 'b', min: -6, max: 6, step: 0.5, defaultValue: 0.0, description: 'Point where the beam crosses the vertical y-axis (0, b)' }
+    ],
+    targets: [
+      { id: 't1', x: 2, y: 3, radius: 0.5, label: 'Node α (2, 3)' },
+      { id: 't2', x: 6, y: 7, radius: 0.5, label: 'Node β (6, 7)' }
+    ],
+    obstacles: [],
+    bounds: { minX: -2, maxX: 8, minY: -2, maxY: 8 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.CED.A.2',
+      standardName: 'Create Equations in Two Variables (Slope-Intercept Form)',
+      topicCategory: 'Algebra I',
+      intuition: 'Slope (m) dictates the angle of ascent or descent—for every 1 unit you move right, you move m units up. The y-intercept (b) slides the entire line up or down without changing its direction.',
+      keyFormulaLatex: 'y = m x + b \\quad \\text{where } m = \\frac{y_2 - y_1}{x_2 - x_1}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Calculate Slope (m)',
+          mathExpression: 'm = \\frac{7 - 3}{6 - 2} = \\frac{4}{4} = 1.0',
+          explanation: 'Subtract y-coordinates over x-coordinates between Target α (2, 3) and Target β (6, 7).'
+        },
+        {
+          stepNumber: 2,
+          label: 'Solve for Y-Intercept (b)',
+          mathExpression: 'y = 1(x) + b \\implies 3 = 1(2) + b \\implies b = 1.0',
+          explanation: 'Substitute point (2, 3) and m = 1 into y = mx + b and solve for b.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Verify with Second Target',
+          mathExpression: '7 = 1(6) + 1 = 7 \\quad \\checkmark',
+          explanation: 'Substituting x = 6 confirms the line passes directly through (6, 7).'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'm', name: 'Slope', role: 'Controls inclination (rise over run)', currentValueKey: 'm' },
+        { symbol: 'b', name: 'Y-Intercept', role: 'Vertical offset where x = 0', currentValueKey: 'b' },
+        { symbol: 'x', name: 'Input Variable', role: 'Horizontal position along the grid' },
+        { symbol: 'y', name: 'Output Beam Height', role: 'Vertical altitude of the laser line' }
+      ]
+    },
+    hints: [
+      'Find the slope using m = (y2 - y1) / (x2 - x1) with points (2, 3) and (6, 7).',
+      'The difference in y is 7 - 3 = 4; difference in x is 6 - 2 = 4, so m = 1.0.',
+      'Now adjust b to 1.0 so that when x = 0, y = 1.0.'
+    ]
+  },
+  {
+    id: 's1_l2',
+    sectorId: 'linear',
+    sectorTitle: 'Sector 1: The Linear Grid',
+    levelNumber: 2,
+    code: '1.2',
+    title: 'The Perpendicular Deflector',
+    subtitle: 'Orthogonal Lines & Negative Reciprocal Slopes',
+    description: 'A shield barrier blocks direct access to Receptor Ω at (2, 8). Aim your beam into the deflector mirror at (4, 4), which reflects at a 90° orthogonal angle (m₂ = -1/m₁).',
+    type: 'linear_beam',
+    defaultParams: { m: 1.0, b: 0.0 },
+    solutionParams: { m: 0.5, b: 2.0 },
+    paramControls: [
+      { key: 'm', label: 'Emitter Slope', symbol: 'm', min: -3, max: 3, step: 0.25, defaultValue: 1.0, description: 'Incoming beam slope hitting mirror' },
+      { key: 'b', label: 'Emitter Intercept', symbol: 'b', min: -5, max: 5, step: 0.5, defaultValue: 0.0, description: 'Incoming beam y-intercept' }
+    ],
+    targets: [
+      { id: 'mirror', x: 4, y: 4, radius: 0.45, label: 'Deflector (4, 4)' },
+      { id: 't2', x: 2, y: 8, radius: 0.55, label: 'Receptor Ω (2, 8)' }
+    ],
+    obstacles: [
+      { id: 'obs1', x: 1, y: 3.5, width: 0.4, height: 4.5, type: 'shield', label: 'Ion Shield' }
+    ],
+    bounds: { minX: -1, maxX: 7, minY: -1, maxY: 9 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSG.GPE.B.5',
+      standardName: 'Criteria for Perpendicular Lines (Negative Reciprocals)',
+      topicCategory: 'Algebra I / Geometry',
+      intuition: 'Two lines are perpendicular if their slopes multiply to -1 (m₁ · m₂ = -1). Rotating a right triangle 90° swaps its rise and run and flips its sign: rise/run becomes -run/rise.',
+      keyFormulaLatex: 'm_2 = -\\frac{1}{m_1} \\iff m_1 \\cdot m_2 = -1',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Determine Required Reflected Slope (m₂)',
+          mathExpression: 'm_2 = \\frac{8 - 4}{2 - 4} = \\frac{4}{-2} = -2.0',
+          explanation: 'The reflected beam must travel from Mirror (4, 4) to Target Ω (2, 8).'
+        },
+        {
+          stepNumber: 2,
+          label: 'Calculate Incoming Emitter Slope (m₁)',
+          mathExpression: 'm_1 = -\\frac{1}{m_2} = -\\frac{1}{-2.0} = 0.5',
+          explanation: 'Because the deflector reflects orthogonally, m₁ must be the negative reciprocal of -2.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Solve for Incoming Intercept (b₁)',
+          mathExpression: '4 = 0.5(4) + b_1 \\implies 4 = 2 + b_1 \\implies b_1 = 2.0',
+          explanation: 'Substitute point (4, 4) with m = 0.5 into y = mx + b.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'm₁', name: 'Incoming Slope', role: 'Slope of primary beam to mirror', currentValueKey: 'm' },
+        { symbol: 'm₂', name: 'Reflected Slope', role: 'Orthogonal reflected angle: -1/m₁' },
+        { symbol: 'b₁', name: 'Incoming Intercept', role: 'Height at x = 0', currentValueKey: 'b' }
+      ]
+    },
+    hints: [
+      'The reflected beam from (4, 4) to (2, 8) has slope m₂ = (8 - 4)/(2 - 4) = -2.',
+      'For perpendicular reflection, incoming slope m₁ must be -1/(-2) = 0.5.',
+      'Plug (4, 4) into y = 0.5x + b to find b: 4 = 0.5(4) + b -> b = 2.'
+    ]
+  },
+  {
+    id: 's1_l3',
+    sectorId: 'linear',
+    sectorTitle: 'Sector 1: The Linear Grid',
+    levelNumber: 3,
+    code: '1.3',
+    title: 'Dual System Convergence',
+    subtitle: 'Solving Systems of Linear Equations',
+    description: 'System Defense Laser A is locked at y = 0.5x + 3.5. Configure Laser B (m, b) so both beams intersect precisely at the Core Sensor node.',
+    type: 'linear_beam',
+    defaultParams: { m: 1.0, b: 2.0 },
+    solutionParams: { m: -1.0, b: 8.0 },
+    paramControls: [
+      { key: 'm', label: 'Laser B Slope', symbol: 'm₂', min: -4, max: 4, step: 0.5, defaultValue: 1.0, description: 'Slope of Laser B' },
+      { key: 'b', label: 'Laser B Intercept', symbol: 'b₂', min: 0, max: 12, step: 0.5, defaultValue: 2.0, description: 'Intercept of Laser B' }
+    ],
+    targets: [
+      { id: 'core', x: 3, y: 5, radius: 0.5, label: 'Core Node (3, 5)' }
+    ],
+    obstacles: [
+      { id: 'wall', x: 6, y: 1, width: 0.5, height: 6, type: 'absorber', label: 'Perimeter Barrier' }
+    ],
+    bounds: { minX: -1, maxX: 7, minY: -1, maxY: 10 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.REI.C.6',
+      standardName: 'Solve Systems of Linear Equations',
+      topicCategory: 'Algebra I',
+      intuition: 'The solution to a system of equations is the unique point (x, y) where the graphs cross. Setting the two equations equal to each other finds the x-value where both beams share the identical height.',
+      keyFormulaLatex: 'm_1 x + b_1 = m_2 x + b_2 \\implies x = \\frac{b_2 - b_1}{m_1 - m_2}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Confirm Intersection Point of Laser A',
+          mathExpression: 'y_A(3) = 0.5(3) + 3.5 = 1.5 + 3.5 = 5.0',
+          explanation: 'Laser A indeed passes through the Core Node (3, 5).'
+        },
+        {
+          stepNumber: 2,
+          label: 'Choose a Line Passing Through (3, 5)',
+          mathExpression: '5 = m_2(3) + b_2 \\implies b_2 = 5 - 3m_2',
+          explanation: 'Any valid slope m₂ and intercept b₂ satisfying this relation will pass through (3, 5).'
+        },
+        {
+          stepNumber: 3,
+          label: 'Target m₂ = -1.0 for Transverse Angle',
+          mathExpression: 'b_2 = 5 - 3(-1.0) = 5 + 3 = 8.0',
+          explanation: 'Setting m₂ = -1.0 gives b₂ = 8.0, producing a high-contrast orthogonal crossing at (3, 5).'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'm₁ = 0.5', name: 'Laser A Slope', role: 'Fixed slope of system beam' },
+        { symbol: 'b₁ = 3.5', name: 'Laser A Intercept', role: 'Fixed intercept of system beam' },
+        { symbol: 'm₂', name: 'Laser B Slope', role: 'Controllable beam slope', currentValueKey: 'm' },
+        { symbol: 'b₂', name: 'Laser B Intercept', role: 'Controllable beam intercept', currentValueKey: 'b' }
+      ]
+    },
+    hints: [
+      'The Core Node is at (3, 5). Laser B must satisfy 5 = m(3) + b.',
+      'If you pick m = -1.0, then 5 = -1(3) + b -> b = 8.0.',
+      'Both lasers will now cross cleanly at (3, 5).'
+    ]
+  },
+  {
+    id: 's1_l4',
+    sectorId: 'linear',
+    sectorTitle: 'Sector 1: The Linear Grid',
+    levelNumber: 4,
+    code: '1.4',
+    title: 'Multi-Point Beam Splitting',
+    subtitle: 'Collinearity & Linear Interpolation',
+    description: 'Trigger all three sequential resonance gates simultaneously. For three points to lie on a single linear beam, the rate of change between every pair must be identical.',
+    type: 'linear_beam',
+    defaultParams: { m: 1.0, b: 0.0 },
+    solutionParams: { m: 2.0, b: 1.0 },
+    paramControls: [
+      { key: 'm', label: 'Beam Slope', symbol: 'm', min: -4, max: 4, step: 0.25, defaultValue: 1.0, description: 'Unified slope' },
+      { key: 'b', label: 'Y-Intercept', symbol: 'b', min: -5, max: 5, step: 0.5, defaultValue: 0.0, description: 'Unified intercept' }
+    ],
+    targets: [
+      { id: 'gate1', x: -2, y: -3, radius: 0.45, label: 'Gate 1 (-2, -3)' },
+      { id: 'gate2', x: 1, y: 3, radius: 0.45, label: 'Gate 2 (1, 3)' },
+      { id: 'gate3', x: 4, y: 9, radius: 0.45, label: 'Gate 3 (4, 9)' }
+    ],
+    obstacles: [
+      { id: 'side1', x: -1, y: 2, width: 0.5, height: 4, type: 'absorber', label: 'Shield Left' },
+      { id: 'side2', x: 2.5, y: -2, width: 0.5, height: 4, type: 'absorber', label: 'Shield Right' }
+    ],
+    bounds: { minX: -4, maxX: 6, minY: -5, maxY: 11 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.CED.A.3',
+      standardName: 'Represent Constraints by Equations and Interpret Solutions',
+      topicCategory: 'Algebra I',
+      intuition: 'Three points are collinear if and only if the slope between points 1 and 2 equals the slope between points 2 and 3. This constant derivative is the defining hallmark of all linear functions.',
+      keyFormulaLatex: '\\frac{y_2 - y_1}{x_2 - x_1} = \\frac{y_3 - y_2}{x_3 - x_2} = m',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Test Slope between Gate 1 and Gate 2',
+          mathExpression: 'm_{12} = \\frac{3 - (-3)}{1 - (-2)} = \\frac{6}{3} = 2.0',
+          explanation: 'Slope from (-2, -3) to (1, 3) is 2.0.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Test Slope between Gate 2 and Gate 3',
+          mathExpression: 'm_{23} = \\frac{9 - 3}{4 - 1} = \\frac{6}{3} = 2.0',
+          explanation: 'Slopes match, proving the three points are strictly collinear.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Find the Intercept (b)',
+          mathExpression: 'y = 2x + b \\implies 3 = 2(1) + b \\implies b = 1.0',
+          explanation: 'Substituting Gate 2 gives b = 1.0. Equation is y = 2x + 1.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'm', name: 'Constant Slope', role: 'Rise over run across all gates', currentValueKey: 'm' },
+        { symbol: 'b', name: 'Y-Intercept', role: 'Height at origin x = 0', currentValueKey: 'b' }
+      ]
+    },
+    hints: [
+      'Calculate the slope between Gate 1 (-2, -3) and Gate 2 (1, 3): (3 - (-3))/(1 - (-2)) = 6/3 = 2.',
+      'Check if Gate 3 (4, 9) matches: (9 - 3)/(4 - 1) = 6/3 = 2.',
+      'Use Gate 2 to find b: 3 = 2(1) + b -> b = 1.0.'
+    ]
+  },
+
+  // ==========================================
+  // SECTOR 2: KINETIC ARCS (ALGEBRA II / PRECALCULUS)
+  // ==========================================
+  {
+    id: 's2_l1',
+    sectorId: 'parabola',
+    sectorTitle: 'Sector 2: Kinetic Arcs',
+    levelNumber: 1,
+    code: '2.1',
+    title: 'Vertex Targeting',
+    subtitle: 'Vertex Form of a Parabola: y = a(x - h)² + k',
+    description: 'An asteroid defense pillar guards the coordinate column at x = 3. Set vertex (h, k) and curvature (a) so the projectile arc peaks over the barrier and descends into Target Beta at (6, 1).',
+    type: 'parabolic_arc',
+    defaultParams: { a: -0.2, h: 2.0, k: 4.0 },
+    solutionParams: { a: -0.444, h: 3.0, k: 5.0 },
+    paramControls: [
+      { key: 'a', label: 'Curvature (a)', symbol: 'a', min: -1.5, max: -0.1, step: 0.05, defaultValue: -0.2, description: 'Negative: opens downward. Magnitude: steepness of parabola' },
+      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: 0, max: 6, step: 0.5, defaultValue: 2.0, description: 'Horizontal coordinate of maximum peak' },
+      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 2, max: 8, step: 0.5, defaultValue: 4.0, description: 'Peak maximum height of trajectory' }
+    ],
+    targets: [
+      { id: 'peak', x: 3, y: 5, radius: 0.45, label: 'Apex Node (3, 5)' },
+      { id: 'beta', x: 6, y: 1, radius: 0.5, label: 'Target Beta (6, 1)' }
+    ],
+    obstacles: [
+      { id: 'asteroid_wall', x: 3, y: 1.5, width: 0.4, height: 3.0, type: 'shield', label: 'Pillar (Height 3)' }
+    ],
+    bounds: { minX: -1, maxX: 8, minY: -1, maxY: 7 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.CED.A.1',
+      standardName: 'Represent Constraints with Quadratic Functions (Vertex Form)',
+      topicCategory: 'Algebra II',
+      intuition: 'In vertex form y = a(x - h)² + k, the coordinate (h, k) is the absolute highest (or lowest) turning point. Because (x - h)² is always ≥ 0, when a < 0 the maximum value is strictly k, achieved when x = h.',
+      keyFormulaLatex: 'y = a(x - h)^2 + k \\quad \\text{with apex at } (h, k)',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Position the Vertex Over the Barrier',
+          mathExpression: 'h = 3.0, \\quad k = 5.0',
+          explanation: 'The barrier is at x = 3 with height 3. Setting vertex at (3, 5) comfortably crests the wall and triggers the Apex Node.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Substitute Target Beta (6, 1)',
+          mathExpression: '1 = a(6 - 3)^2 + 5 \\implies 1 = a(3)^2 + 5 \\implies 1 = 9a + 5',
+          explanation: 'Plug x = 6, y = 1, h = 3, k = 5 into the vertex form.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Solve for Curvature (a)',
+          mathExpression: '9a = 1 - 5 = -4 \\implies a = -\\frac{4}{9} \\approx -0.444',
+          explanation: 'Negative value confirms the trajectory opens downward.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'a', name: 'Curvature Factor', role: 'Controls spread and downward acceleration', currentValueKey: 'a' },
+        { symbol: 'h', name: 'Horizontal Shift', role: 'X-coordinate of the trajectory apex', currentValueKey: 'h' },
+        { symbol: 'k', name: 'Vertical Shift', role: 'Y-coordinate peak height', currentValueKey: 'k' }
+      ]
+    },
+    hints: [
+      'Place the vertex directly over the barrier at h = 3.0 and peak height k = 5.0.',
+      'Now substitute (6, 1): 1 = a(6 - 3)² + 5 -> 1 = 9a + 5 -> 9a = -4.',
+      'So a = -4/9 ≈ -0.44. Set a close to -0.44!'
+    ]
+  },
+  {
+    id: 's2_l2',
+    sectorId: 'parabola',
+    sectorTitle: 'Sector 2: Kinetic Arcs',
+    levelNumber: 2,
+    code: '2.2',
+    title: 'Root Calibration',
+    subtitle: 'Factored Form & Zero-Gravity Windows',
+    description: 'Obstacle shields block the ground except for narrow clearance slits at x = -2 and x = 4. Calibrate root factors to thread the probe through both slits and strike Receptor γ at (1, 4.5).',
+    type: 'parabolic_arc',
+    defaultParams: { a: -0.2, h: 1.0, k: 3.0 },
+    solutionParams: { a: -0.5, h: 1.0, k: 4.5 },
+    paramControls: [
+      { key: 'a', label: 'Leading Coeff (a)', symbol: 'a', min: -1.2, max: -0.1, step: 0.05, defaultValue: -0.2, description: 'Scale factor' },
+      { key: 'h', label: 'Axis of Symmetry (h)', symbol: 'h', min: -1, max: 3, step: 0.5, defaultValue: 1.0, description: 'Midpoint of roots: (r₁ + r₂)/2' },
+      { key: 'k', label: 'Peak Height (k)', symbol: 'k', min: 2, max: 7, step: 0.5, defaultValue: 3.0, description: 'Maximum height y(h)' }
+    ],
+    targets: [
+      { id: 'slit1', x: -2, y: 0, radius: 0.45, label: 'Root Gate 1 (-2, 0)' },
+      { id: 'target_gamma', x: 1, y: 4.5, radius: 0.5, label: 'Receptor γ (1, 4.5)' },
+      { id: 'slit2', x: 4, y: 0, radius: 0.45, label: 'Root Gate 2 (4, 0)' }
+    ],
+    obstacles: [
+      { id: 'ground_shield_left', x: -4, y: 0, width: 3.5, height: 0.8, type: 'shield', label: 'Shield L' },
+      { id: 'ground_shield_mid', x: 1, y: 0, width: 4.0, height: 0.8, type: 'shield', label: 'Shield Mid' },
+      { id: 'ground_shield_right', x: 6, y: 0, width: 3.5, height: 0.8, type: 'shield', label: 'Shield R' }
+    ],
+    bounds: { minX: -4, maxX: 6, minY: -1, maxY: 6 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.APR.B.3',
+      standardName: 'Identify Zeros of Polynomials & Quadratic Factored Form',
+      topicCategory: 'Algebra II',
+      intuition: 'A parabola crossing the horizontal axis at x = r₁ and x = r₂ has the factored form y = a(x - r₁)(x - r₂). By symmetry, the vertex must sit exactly at the average of the two roots: h = (r₁ + r₂)/2.',
+      keyFormulaLatex: 'y = a(x - r_1)(x - r_2), \\quad h = \\frac{r_1 + r_2}{2}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Find Axis of Symmetry (h)',
+          mathExpression: 'h = \\frac{-2 + 4}{2} = \\frac{2}{2} = 1.0',
+          explanation: 'The roots are r₁ = -2 and r₂ = 4. The midpoint is x = 1.0.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Write Factored Form with Target (1, 4.5)',
+          mathExpression: 'y = a(x + 2)(x - 4) \\implies 4.5 = a(1 + 2)(1 - 4)',
+          explanation: 'Substitute point (1, 4.5) into the equation.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Solve for Leading Coefficient (a)',
+          mathExpression: '4.5 = a(3)(-3) = -9a \\implies a = -\\frac{4.5}{9} = -0.5',
+          explanation: 'Leading coefficient is a = -0.5, giving peak height k = 4.5.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'r₁, r₂', name: 'Roots / Zeros', role: 'X-intercepts where y = 0 (-2 and 4)' },
+        { symbol: 'h = 1', name: 'Midpoint Symmetry', role: 'Center line of the parabola', currentValueKey: 'h' },
+        { symbol: 'a = -0.5', name: 'Scale Factor', role: 'Flattens or steepens trajectory', currentValueKey: 'a' }
+      ]
+    },
+    hints: [
+      'The two roots are at x = -2 and x = 4. Their center (axis of symmetry) is h = (-2 + 4)/2 = 1.0.',
+      'At x = 1, we want height to be 4.5 (so k = 4.5).',
+      'Factored form y = a(x + 2)(x - 4) -> 4.5 = a(3)(-3) = -9a -> a = -0.5.'
+    ]
+  },
+  {
+    id: 's2_l3',
+    sectorId: 'parabola',
+    sectorTitle: 'Sector 2: Kinetic Arcs',
+    levelNumber: 3,
+    code: '2.3',
+    title: 'Focal Point Resonance',
+    subtitle: 'The Geometric Focus: (h, k + 1/(4a))',
+    description: 'Parabolic antennas concentrate all incoming parallel rays into a single focal point F. Position the parabola vertex and curvature so its focus aligns exactly with the Energy Core at (2, 3).',
+    type: 'parabolic_arc',
+    defaultParams: { a: 0.1, h: 0.0, k: 0.0 },
+    solutionParams: { a: 0.25, h: 2.0, k: 2.0 },
+    paramControls: [
+      { key: 'a', label: 'Curvature (a)', symbol: 'a', min: 0.1, max: 1.0, step: 0.05, defaultValue: 0.1, description: 'Positive: opens upward' },
+      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: -2, max: 5, step: 0.5, defaultValue: 0.0, description: 'X-coordinate of vertex' },
+      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 0, max: 4, step: 0.5, defaultValue: 0.0, description: 'Y-coordinate of vertex' }
+    ],
+    targets: [
+      { id: 'focus_core', x: 2, y: 3, radius: 0.5, label: 'Energy Core Focus (2, 3)' },
+      { id: 'vertex_node', x: 2, y: 2, radius: 0.4, label: 'Dish Base (2, 2)' }
+    ],
+    obstacles: [
+      { id: 'b1', x: -1, y: 3.5, width: 0.5, height: 3, type: 'absorber', label: 'Baffle L' }
+    ],
+    bounds: { minX: -2, maxX: 6, minY: -1, maxY: 6 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSG.GPE.A.2',
+      standardName: 'Derive Equation of Parabola Given Focus and Directrix',
+      topicCategory: 'Precalculus / Analytic Geometry',
+      intuition: 'A parabola is the locus of points equidistant from a point (the focus) and a line (the directrix). This special reflective property causes all parallel rays entering the dish to reflect directly into the focus.',
+      keyFormulaLatex: 'y = a(x - h)^2 + k, \\quad F = \\left(h, k + \\frac{1}{4a}\\right)',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Align Horizontal Axis with Focus',
+          mathExpression: 'h = 2.0',
+          explanation: 'The focus x-coordinate is 2, so the vertex axis of symmetry must be h = 2.0.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Relate Focal Distance p to Curvature a',
+          mathExpression: 'p = y_F - k = 3.0 - 2.0 = 1.0 \\implies p = \\frac{1}{4a} = 1.0',
+          explanation: 'Choosing vertex base at k = 2.0 leaves focal distance p = 1.0.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Solve for a',
+          mathExpression: '\\frac{1}{4a} = 1.0 \\implies 4a = 1 \\implies a = 0.25',
+          explanation: 'Curvature a = 0.25 places the focal point perfectly at y = 2 + 1 = 3.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'p = 1/(4a)', name: 'Focal Length', role: 'Distance from vertex (h, k) to focus F' },
+        { symbol: 'F(h, k+p)', name: 'Focus Node', role: 'Receptor location where signals converge' },
+        { symbol: 'a', name: 'Curvature', role: 'Controls focal length inversely: smaller a means farther focus', currentValueKey: 'a' }
+      ]
+    },
+    hints: [
+      'The focus must be at (2, 3), so set the vertex horizontal position h = 2.0.',
+      'Place the dish base at k = 2.0. The focal distance is p = 3 - 2 = 1.0.',
+      'Since p = 1/(4a) = 1.0, 4a = 1 -> a = 0.25.'
+    ]
+  },
+  {
+    id: 's2_l4',
+    sectorId: 'parabola',
+    sectorTitle: 'Sector 2: Kinetic Arcs',
+    levelNumber: 4,
+    code: '2.4',
+    title: 'Inverse Ballistic Arc',
+    subtitle: '3-Point Parabolic Interpolation',
+    description: 'A missile test requires charting an orbital arc satisfying three boundary condition sensors at (0, 2), (2, 6), and (4, 2). Derive the exact quadratic coefficients.',
+    type: 'parabolic_arc',
+    defaultParams: { a: -0.5, h: 1.0, k: 4.0 },
+    solutionParams: { a: -1.0, h: 2.0, k: 6.0 },
+    paramControls: [
+      { key: 'a', label: 'Quadratic Coeff (a)', symbol: 'a', min: -2.0, max: -0.2, step: 0.1, defaultValue: -0.5, description: 'Vertical acceleration' },
+      { key: 'h', label: 'Vertex X (h)', symbol: 'h', min: 0, max: 4, step: 0.5, defaultValue: 1.0, description: 'Symmetry axis' },
+      { key: 'k', label: 'Vertex Y (k)', symbol: 'k', min: 3, max: 8, step: 0.5, defaultValue: 4.0, description: 'Peak altitude' }
+    ],
+    targets: [
+      { id: 'p1', x: 0, y: 2, radius: 0.45, label: 'Sensor 1 (0, 2)' },
+      { id: 'p2', x: 2, y: 6, radius: 0.45, label: 'Sensor 2 (2, 6)' },
+      { id: 'p3', x: 4, y: 2, radius: 0.45, label: 'Sensor 3 (4, 2)' }
+    ],
+    obstacles: [
+      { id: 'shield_top', x: 2, y: 7.5, width: 4.0, height: 0.5, type: 'shield', label: 'Atmospheric Ceiling' }
+    ],
+    bounds: { minX: -2, maxX: 6, minY: 0, maxY: 8 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSA.CED.A.2',
+      standardName: 'Quadratic Curve Fitting & Boundary Conditions',
+      topicCategory: 'Algebra II / Precalculus',
+      intuition: 'Three non-collinear points uniquely determine a single parabola. Symmetry between (0, 2) and (4, 2) guarantees that the vertex x-coordinate must be exactly midway at h = 2.',
+      keyFormulaLatex: 'y = a(x - h)^2 + k, \\quad y = -x^2 + 4x + 2',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Recognize Symmetry Axis',
+          mathExpression: 'h = \\frac{0 + 4}{2} = 2.0',
+          explanation: 'Points (0, 2) and (4, 2) have identical y-values, so vertex x must be h = 2.0.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Identify Peak (Vertex)',
+          mathExpression: 'x = 2 \\implies y = 6.0 \\implies k = 6.0',
+          explanation: 'The given point (2, 6) is at x = h, meaning (2, 6) is the vertex itself!'
+        },
+        {
+          stepNumber: 3,
+          label: 'Solve for Curvature a',
+          mathExpression: '2 = a(0 - 2)^2 + 6 \\implies 2 = 4a + 6 \\implies 4a = -4 \\implies a = -1.0',
+          explanation: 'Substitute point (0, 2) into vertex form.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'a = -1', name: 'Curvature', role: 'Downward gravitational acceleration', currentValueKey: 'a' },
+        { symbol: 'h = 2', name: 'Vertex X', role: 'Horizontal center of trajectory', currentValueKey: 'h' },
+        { symbol: 'k = 6', name: 'Vertex Y', role: 'Maximum orbital apogee', currentValueKey: 'k' }
+      ]
+    },
+    hints: [
+      'Notice (0, 2) and (4, 2) share the same y-value. The midpoint is h = 2.0.',
+      'Sensor 2 is at (2, 6), which sits on the midpoint axis! So k = 6.0.',
+      'Plug in (0, 2): 2 = a(0 - 2)² + 6 -> 2 = 4a + 6 -> 4a = -4 -> a = -1.0.'
+    ]
+  },
+
+  // ==========================================
+  // SECTOR 3: THE WARP MATRIX (LINEAR ALGEBRA)
+  // ==========================================
+  {
+    id: 's3_l1',
+    sectorId: 'matrix',
+    sectorTitle: 'Sector 3: The Warp Matrix',
+    levelNumber: 1,
+    code: '3.1',
+    title: 'Basis Alignment',
+    subtitle: 'Linear Transformations & Basis Vectors [î, ĵ]',
+    description: 'A docking corridor has skewed coordinates. Transform the standard basis vectors î = [1, 0]ᵀ and ĵ = [0, 1]ᵀ using matrix M = [a, b; c, d] so that î lands on Dock Pin 1 at (2, 1) and ĵ lands on Dock Pin 2 at (-1, 3).',
+    type: 'matrix_warp',
+    defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
+    solutionParams: { a: 2.0, b: -1.0, c: 1.0, d: 3.0 },
+    paramControls: [
+      { key: 'a', label: 'M₁₁ (î_x)', symbol: 'a', min: -3, max: 4, step: 0.5, defaultValue: 1.0, description: 'Where î lands on x-axis' },
+      { key: 'c', label: 'M₂₁ (î_y)', symbol: 'c', min: -3, max: 4, step: 0.5, defaultValue: 0.0, description: 'Where î lands on y-axis' },
+      { key: 'b', label: 'M₁₂ (ĵ_x)', symbol: 'b', min: -3, max: 4, step: 0.5, defaultValue: 0.0, description: 'Where ĵ lands on x-axis' },
+      { key: 'd', label: 'M₂₂ (ĵ_y)', symbol: 'd', min: -3, max: 4, step: 0.5, defaultValue: 1.0, description: 'Where ĵ lands on y-axis' }
+    ],
+    targets: [
+      { id: 'pin1', x: 2, y: 1, radius: 0.45, label: 'Dock Pin 1: T(î) = [2, 1]' },
+      { id: 'pin2', x: -1, y: 3, radius: 0.45, label: 'Dock Pin 2: T(ĵ) = [-1, 3]' }
+    ],
+    obstacles: [],
+    bounds: { minX: -3, maxX: 4, minY: -2, maxY: 5 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSN.VM.C.7 & Linear Algebra 101',
+      standardName: 'Represent and Manipulate 2D Linear Transformations with Matrices',
+      topicCategory: 'Linear Algebra',
+      intuition: 'Every 2D linear transformation is completely and uniquely described by where it sends the standard unit vectors î = [1, 0]ᵀ and ĵ = [0, 1]ᵀ. The columns of the matrix ARE literally the new landing coordinates of î and ĵ!',
+      keyFormulaLatex: 'M = \\begin{bmatrix} T(\\hat{i}) & T(\\hat{j}) \\end{bmatrix} = \\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Map First Basis Vector î',
+          mathExpression: 'M \\begin{bmatrix} 1 \\\\ 0 \\end{bmatrix} = \\begin{bmatrix} a(1) + b(0) \\\\ c(1) + d(0) \\end{bmatrix} = \\begin{bmatrix} a \\\\ c \\end{bmatrix} = \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix}',
+          explanation: 'The first column [a, c]ᵀ is the transformed coordinate of î. Thus a = 2.0 and c = 1.0.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Map Second Basis Vector ĵ',
+          mathExpression: 'M \\begin{bmatrix} 0 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} a(0) + b(1) \\\\ c(0) + d(1) \\end{bmatrix} = \\begin{bmatrix} b \\\\ d \\end{bmatrix} = \\begin{bmatrix} -1 \\\\ 3 \\end{bmatrix}',
+          explanation: 'The second column [b, d]ᵀ is the transformed coordinate of ĵ. Thus b = -1.0 and d = 3.0.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Verify Full Matrix',
+          mathExpression: 'M = \\begin{bmatrix} 2 & -1 \\\\ 1 & 3 \\end{bmatrix}, \\quad \\det(M) = (2)(3) - (-1)(1) = 7.0',
+          explanation: 'Grid is non-singular with area scaling factor of 7.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: '[a, c]ᵀ', name: 'First Column', role: 'Landing position of î = [1, 0]ᵀ', currentValueKey: 'a' },
+        { symbol: '[b, d]ᵀ', name: 'Second Column', role: 'Landing position of ĵ = [0, 1]ᵀ', currentValueKey: 'b' },
+        { symbol: 'det(M)', name: 'Determinant', role: 'Area scaling factor ad - bc' }
+      ]
+    },
+    hints: [
+      'The first column [a, c]ᵀ is where î goes: set a = 2.0 and c = 1.0.',
+      'The second column [b, d]ᵀ is where ĵ goes: set b = -1.0 and d = 3.0.',
+      'Notice how the columns of the matrix are literally the coordinates of the target pins!'
+    ]
+  },
+  {
+    id: 's3_l2',
+    sectorId: 'matrix',
+    sectorTitle: 'Sector 3: The Warp Matrix',
+    levelNumber: 2,
+    code: '3.2',
+    title: 'Shear Warp',
+    subtitle: 'Area-Preserving Shear Transformations [1, k; 0, 1]',
+    description: 'Security laser slits are arranged diagonally along the corridor. Apply a horizontal shear matrix to slide the unit square into a parallelogram without altering its vertical height or area.',
+    type: 'matrix_warp',
+    defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
+    solutionParams: { a: 1.0, b: 1.5, c: 0.0, d: 1.0 },
+    paramControls: [
+      { key: 'b', label: 'Shear Factor (k)', symbol: 'k', min: -2, max: 3, step: 0.25, defaultValue: 0.0, description: 'Horizontal displacement proportional to y' }
+    ],
+    targets: [
+      { id: 'target_shear', x: 2.5, y: 1.0, radius: 0.45, label: 'Shear Gate [1+k, 1] = [2.5, 1]' }
+    ],
+    obstacles: [
+      { id: 'slit_barrier', x: 1.2, y: 1.0, width: 0.5, height: 1.8, type: 'shield', label: 'Slit Barrier' }
+    ],
+    bounds: { minX: -1, maxX: 4, minY: -1, maxY: 3 },
+    curriculum: {
+      standard: 'Linear Algebra: Shear Operators & Geometric Invariance',
+      standardName: 'Shear Transformations and Area Invariance',
+      topicCategory: 'Linear Algebra',
+      intuition: 'A shear slides layers parallel to an axis like a tilted deck of cards. Because the base and height remain unchanged, det(Shear) = (1)(1) - (k)(0) = 1.0, preserving geometric area exactly!',
+      keyFormulaLatex: 'S_x(k) = \\begin{bmatrix} 1 & k \\\\ 0 & 1 \\end{bmatrix}, \\quad \\det(S_x) = 1',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Analyze Transformation of Point (1, 1)',
+          mathExpression: '\\begin{bmatrix} 1 & k \\\\ 0 & 1 \\end{bmatrix} \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 1 + k \\\\ 1 \\end{bmatrix}',
+          explanation: 'The top vertex of the unit square at (1, 1) shifts horizontally to 1 + k.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Target Position Match',
+          mathExpression: '1 + k = 2.5 \\implies k = 1.5',
+          explanation: 'The target requires the vertex to land at x = 2.5 while keeping y = 1.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Verify Area Preservation',
+          mathExpression: '\\det(S) = (1)(1) - (1.5)(0) = 1.0',
+          explanation: 'Area remains identically 1.0 unit square.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'k = 1.5', name: 'Shear Parameter', role: 'Slopes the vertical grid lines by 1.5 units per unit height', currentValueKey: 'b' },
+        { symbol: 'det = 1', name: 'Unit Determinant', role: 'Guarantees zero volume expansion' }
+      ]
+    },
+    hints: [
+      'The matrix is [1, k; 0, 1]. Point (1, 1) transforms to (1 + k, 1).',
+      'The target is at (2.5, 1).',
+      'Set 1 + k = 2.5 -> k = 1.5.'
+    ]
+  },
+  {
+    id: 's3_l3',
+    sectorId: 'matrix',
+    sectorTitle: 'Sector 3: The Warp Matrix',
+    levelNumber: 3,
+    code: '3.3',
+    title: 'Pure Rotation & Orthogonality',
+    subtitle: 'Rotation Matrices & Trigonometric Invariance',
+    description: 'Four satellite receiver pods are spaced at 90° intervals along a circle of radius 2. Rotate the coordinate basis by angle θ = 45° (π/4 rad) to illuminate all four pods simultaneously.',
+    type: 'matrix_warp',
+    defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
+    solutionParams: { a: 0.707, b: -0.707, c: 0.707, d: 0.707 },
+    paramControls: [
+      { key: 'theta_deg', label: 'Rotation Angle (θ)', symbol: 'θ', min: 0, max: 360, step: 15, defaultValue: 0, unit: '°', description: 'Counter-clockwise angle of rotation' }
+    ],
+    targets: [
+      { id: 'pod1', x: 1.414, y: 1.414, radius: 0.45, label: 'Pod 1 (45°)' },
+      { id: 'pod2', x: -1.414, y: 1.414, radius: 0.45, label: 'Pod 2 (135°)' },
+      { id: 'pod3', x: -1.414, y: -1.414, radius: 0.45, label: 'Pod 3 (225°)' },
+      { id: 'pod4', x: 1.414, y: -1.414, radius: 0.45, label: 'Pod 4 (315°)' }
+    ],
+    obstacles: [],
+    bounds: { minX: -3, maxX: 3, minY: -3, maxY: 3 },
+    curriculum: {
+      standard: 'CCSS.MATH.CONTENT.HSN.VM.C.11 & Linear Algebra: Orthogonal Matrices',
+      standardName: 'Rotation Matrices in 2D Space & Isometries',
+      topicCategory: 'Linear Algebra / Trigonometry',
+      intuition: 'A rotation matrix preserves lengths and angles (an isometry). Because columns are orthonormal (unit length and perpendicular to each other), its determinant is always +1, and its inverse is simply its transpose: R⁻¹ = Rᵀ.',
+      keyFormulaLatex: 'R(\\theta) = \\begin{bmatrix} \\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta \\end{bmatrix}, \\quad \\det(R) = \\cos^2\\theta + \\sin^2\\theta = 1',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Determine Angle to Target Pod 1',
+          mathExpression: '\\tan(\\theta) = \\frac{1.414}{1.414} = 1.0 \\implies \\theta = 45^\\circ = \\frac{\\pi}{4}',
+          explanation: 'Pod 1 lies along the diagonal line y = x.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Calculate Trigonometric Values',
+          mathExpression: '\\cos(45^\\circ) = \\frac{\\sqrt{2}}{2} \\approx 0.707, \\quad \\sin(45^\\circ) = \\frac{\\sqrt{2}}{2} \\approx 0.707',
+          explanation: 'Evaluate sine and cosine at 45 degrees.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Construct Matrix Entries',
+          mathExpression: 'R(45^\\circ) = \\begin{bmatrix} 0.707 & -0.707 \\\\ 0.707 & 0.707 \\end{bmatrix}',
+          explanation: 'All 4 basis axes align precisely with the 4 target pods.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'cos θ', name: 'Diagonal Entries', role: 'Projection along original axes' },
+        { symbol: '±sin θ', name: 'Cross Entries', role: 'Orthogonal shear coupling to maintain 90° rigidity' }
+      ]
+    },
+    hints: [
+      'The targets lie along the diagonal y = x in the first quadrant.',
+      'The angle between the positive x-axis and the line y = x is 45°.',
+      'Adjust the rotation slider θ to 45°.'
+    ]
+  },
+  {
+    id: 's3_l4',
+    sectorId: 'matrix',
+    sectorTitle: 'Sector 3: The Warp Matrix',
+    levelNumber: 4,
+    code: '3.4',
+    title: 'Determinant Area Compression',
+    subtitle: 'Area Scaling Factor & Singularity Avoidance',
+    description: 'Calibrate matrix entries so the transformed unit square expands to an exact area of det(A) = 4.0 units, while avoiding singular collapse (det(A) = 0).',
+    type: 'matrix_warp',
+    defaultParams: { a: 1.0, b: 0.0, c: 0.0, d: 1.0 },
+    solutionParams: { a: 2.0, b: 0.0, c: 0.0, d: 2.0 },
+    paramControls: [
+      { key: 'a', label: 'Entry a (M₁₁)', symbol: 'a', min: 0.5, max: 4.0, step: 0.5, defaultValue: 1.0, description: 'Row 1 Col 1' },
+      { key: 'd', label: 'Entry d (M₂₂)', symbol: 'd', min: 0.5, max: 4.0, step: 0.5, defaultValue: 1.0, description: 'Row 2 Col 2' }
+    ],
+    targets: [
+      { id: 'area_corner', x: 2.0, y: 2.0, radius: 0.5, label: 'Area Target (det = 4)' }
+    ],
+    obstacles: [
+      { id: 'singularity_wall', x: 0.5, y: 0.5, width: 0.2, height: 0.2, type: 'absorber', label: 'Singularity Trap (det = 0)' }
+    ],
+    bounds: { minX: -1, maxX: 4, minY: -1, maxY: 4 },
+    curriculum: {
+      standard: 'Linear Algebra: The Determinant as Area and Volume Scaling',
+      standardName: 'Determinant & Matrix Invertibility',
+      topicCategory: 'Linear Algebra',
+      intuition: 'The determinant of a 2x2 matrix det(A) = ad - bc measures how much area is scaled under the transformation. If det(A) = 0, 2D space squashes into a 1D line or point—a singular collapse where information is permanently lost!',
+      keyFormulaLatex: '\\det(A) = ad - bc = \\text{Area Scaling Factor}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Diagonal Matrix Expansion',
+          mathExpression: 'M = \\begin{bmatrix} a & 0 \\\\ 0 & d \\end{bmatrix} \\implies \\det(M) = a \\cdot d - (0)(0) = ad',
+          explanation: 'For a diagonal matrix, the determinant is simply the product of the diagonal elements.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Set Target Area',
+          mathExpression: 'ad = 4.0',
+          explanation: 'We require total area of 4.0.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Choose Symmetrical Scaling',
+          mathExpression: 'a = 2.0, \\quad d = 2.0 \\implies 2 \\times 2 = 4.0',
+          explanation: 'Setting a = 2.0 and d = 2.0 expands the unit square evenly to area 4.0.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'det(A)', name: 'Determinant', role: 'Area scale factor: ad - bc', currentValueKey: 'det' },
+        { symbol: 'a, d', name: 'Scaling Axes', role: 'Scale along x and y directions' }
+      ]
+    },
+    hints: [
+      'The determinant of [a, 0; 0, d] is simply a · d.',
+      'We need a · d = 4.0.',
+      'Set a = 2.0 and d = 2.0.'
+    ]
+  },
+
+  // ==========================================
+  // SECTOR 4: THE TANGENT BLADE (INTRODUCTORY CALCULUS)
+  // ==========================================
+  {
+    id: 's4_l1',
+    sectorId: 'calculus',
+    sectorTitle: 'Sector 4: The Tangent Blade',
+    levelNumber: 1,
+    code: '4.1',
+    title: 'The Secant Convergence',
+    subtitle: 'Definition of Derivative as Limit of Secant Slopes (h → 0)',
+    description: 'On the parabola f(x) = 0.5x², a laser chord connects (x₀, f(x₀)) at x₀ = 2 to (x₀ + h, f(x₀ + h)). Shrink the separation step h toward 0 until the secant chord becomes the instantaneous tangent line striking Target Alpha at (4, 6).',
+    type: 'tangent_blade',
+    defaultParams: { x0: 2.0, h: 2.0 },
+    solutionParams: { x0: 2.0, h: 0.05 },
+    calculusFunction: (x: number) => 0.5 * x * x,
+    calculusDerivative: (x: number) => x,
+    calculusFunctionLatex: 'f(x) = 0.5 x^2',
+    paramControls: [
+      { key: 'h', label: 'Secant Step (h)', symbol: 'h', min: 0.05, max: 2.5, step: 0.05, defaultValue: 2.0, description: 'Separation between test points' }
+    ],
+    targets: [
+      { id: 'target_alpha', x: 4.0, y: 6.0, radius: 0.5, label: 'Target Alpha (4, 6)' }
+    ],
+    obstacles: [
+      { id: 'secant_blocker', x: 3.0, y: 4.0, width: 0.3, height: 1.5, type: 'shield', label: 'Secant Hazard' }
+    ],
+    bounds: { minX: -1, maxX: 6, minY: -1, maxY: 8 },
+    curriculum: {
+      standard: 'AP Calculus AB: CHA-2 (Limit Definition of Derivative)',
+      standardName: 'Instantaneous Rate of Change & Limit of Difference Quotient',
+      topicCategory: 'Calculus I',
+      intuition: 'A secant line measures the average rate of change between two separated points. As we slide the second point closer (h → 0), the secant line pivots smoothly into the tangent line—the instantaneous rate of change at a single instant.',
+      keyFormulaLatex: 'f\'(x_0) = \\lim_{h \\to 0} \\frac{f(x_0 + h) - f(x_0)}{h}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Evaluate Function at x₀ = 2',
+          mathExpression: 'f(2) = 0.5(2)^2 = 2.0',
+          explanation: 'The point of tangency is (2, 2).'
+        },
+        {
+          stepNumber: 2,
+          label: 'Compute Difference Quotient',
+          mathExpression: '\\frac{0.5(2 + h)^2 - 2}{h} = \\frac{0.5(4 + 4h + h^2) - 2}{h} = \\frac{2h + 0.5h^2}{h} = 2 + 0.5h',
+          explanation: 'Secant slope formula for any separation h.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Take the Limit as h → 0',
+          mathExpression: 'm_{\\text{tan}} = \\lim_{h \\to 0} (2 + 0.5h) = 2.0',
+          explanation: 'Instantaneous slope is exactly 2.0.'
+        },
+        {
+          stepNumber: 4,
+          label: 'Write Tangent Line & Verify Target',
+          mathExpression: 'y - 2 = 2(x - 2) \\implies y = 2x - 2. \\quad \\text{At } x = 4: y = 2(4) - 2 = 6.0 \\quad \\checkmark',
+          explanation: 'The true tangent line strikes Target Alpha (4, 6) directly!'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'h', name: 'Secant Step Size', role: 'Separation between points; shrinks to 0', currentValueKey: 'h' },
+        { symbol: 'f\'(2) = 2', name: 'Derivative', role: 'Slope of tangent line at x = 2' }
+      ]
+    },
+    hints: [
+      'The difference quotient is (f(2+h) - f(2))/h = 2 + 0.5h.',
+      'As h approaches 0, the secant slope converges to the derivative f\'(2) = 2.0.',
+      'Slide h down towards its minimum (0.05) to snap into the true tangent line!'
+    ]
+  },
+  {
+    id: 's4_l2',
+    sectorId: 'calculus',
+    sectorTitle: 'Sector 4: The Tangent Blade',
+    levelNumber: 2,
+    code: '4.2',
+    title: 'Polynomial Velocity',
+    subtitle: 'Power Rule Derivatives & Tangent Trajectories',
+    description: 'For cubic curve f(x) = x³ - 3x, select the point of tangency x₀ whose tangent line shoots straight into the Relay Target at (2, 2).',
+    type: 'tangent_blade',
+    defaultParams: { x0: 0.0, h: 0.01 },
+    solutionParams: { x0: 2.0, h: 0.01 },
+    calculusFunction: (x: number) => x * x * x - 3 * x,
+    calculusDerivative: (x: number) => 3 * x * x - 3,
+    calculusFunctionLatex: 'f(x) = x^3 - 3x',
+    paramControls: [
+      { key: 'x0', label: 'Tangency Point (x₀)', symbol: 'x₀', min: -2.5, max: 2.5, step: 0.25, defaultValue: 0.0, description: 'Evaluation coordinate' }
+    ],
+    targets: [
+      { id: 'relay_t', x: 2.0, y: 2.0, radius: 0.5, label: 'Relay Target (2, 2)' }
+    ],
+    obstacles: [
+      { id: 'low_wall', x: 0.5, y: -1.0, width: 0.4, height: 1.5, type: 'absorber', label: 'Trough Shield' }
+    ],
+    bounds: { minX: -3, maxX: 3, minY: -4, maxY: 4 },
+    curriculum: {
+      standard: 'AP Calculus AB: FUN-1 (Power Rule & Tangent Lines)',
+      standardName: 'Derivative of Power Functions and Tangent Lines',
+      topicCategory: 'Calculus I',
+      intuition: 'The power rule d/dx [xⁿ] = n xⁿ⁻¹ provides an exact formula for velocity anywhere on the curve. Evaluating f\'(x₀) gives the slope of the particle ejected from the curve at x₀.',
+      keyFormulaLatex: 'f(x) = x^3 - 3x \\implies f\'(x) = 3x^2 - 3',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Apply Power Rule',
+          mathExpression: '\\frac{d}{dx}[x^3 - 3x] = 3x^2 - 3',
+          explanation: 'Derivative of x³ is 3x²; derivative of -3x is -3.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Evaluate at Candidate x₀ = 2.0',
+          mathExpression: 'f(2) = 2^3 - 3(2) = 8 - 6 = 2.0',
+          explanation: 'Point on curve is (2, 2).'
+        },
+        {
+          stepNumber: 3,
+          label: 'Compute Instantaneous Slope',
+          mathExpression: 'f\'(2) = 3(2)^2 - 3 = 12 - 3 = 9.0',
+          explanation: 'Slope at x = 2 is 9.0, passing through (2, 2).'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'x₀', name: 'Evaluation Point', role: 'Location where the tangent blade launches', currentValueKey: 'x0' },
+        { symbol: 'f\'(x₀)', name: 'Instantaneous Slope', role: 'Trajectory launch angle: 3x₀² - 3' }
+      ]
+    },
+    hints: [
+      'The Relay Target is at (2, 2).',
+      'Check if (2, 2) is actually on the curve: f(2) = 2³ - 3(2) = 8 - 6 = 2! Yes!',
+      'Select x₀ = 2.0 so the tangent blade launches right through the target.'
+    ]
+  },
+  {
+    id: 's4_l3',
+    sectorId: 'calculus',
+    sectorTitle: 'Sector 4: The Tangent Blade',
+    levelNumber: 3,
+    code: '4.3',
+    title: 'Extrema & Critical Points',
+    subtitle: 'Fermat\'s Theorem & Zero-Slope Tangents f\'(x) = 0',
+    description: 'A horizontal capacitor receptor is situated at (4, 2). For curve f(x) = -x³ + 3x, find the critical point where f\'(x) = 0 to fire a perfectly horizontal zero-slope beam.',
+    type: 'tangent_blade',
+    defaultParams: { x0: -0.5, h: 0.01 },
+    solutionParams: { x0: 1.0, h: 0.01 },
+    calculusFunction: (x: number) => -x * x * x + 3 * x,
+    calculusDerivative: (x: number) => -3 * x * x + 3,
+    calculusFunctionLatex: 'f(x) = -x^3 + 3x',
+    paramControls: [
+      { key: 'x0', label: 'Evaluation Point (x₀)', symbol: 'x₀', min: -2.0, max: 2.0, step: 0.25, defaultValue: -0.5, description: 'Position along the curve' }
+    ],
+    targets: [
+      { id: 'h_cap', x: 4.0, y: 2.0, radius: 0.5, label: 'Horizontal Capacitor (4, 2)' }
+    ],
+    obstacles: [
+      { id: 'slant_wall', x: 2.5, y: 0.0, width: 0.5, height: 1.5, type: 'shield', label: 'Slant Shield' }
+    ],
+    bounds: { minX: -2.5, maxX: 5, minY: -3, maxY: 4 },
+    curriculum: {
+      standard: 'AP Calculus AB: FUN-4 (Fermat\'s Theorem on Critical Points)',
+      standardName: 'Optimization, Critical Points & First Derivative Test',
+      topicCategory: 'Calculus I',
+      intuition: 'At peaks and valleys (local maxima and minima), the tangent line is momentarily perfectly flat (slope = 0). Finding where f\'(x) = 0 locates the exact coordinates of these optimal crests.',
+      keyFormulaLatex: 'f\'(x) = 0 \\iff -3x^2 + 3 = 0 \\implies x = \\pm 1',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Take Derivative',
+          mathExpression: 'f\'(x) = \\frac{d}{dx}[-x^3 + 3x] = -3x^2 + 3',
+          explanation: 'Differentiate each term.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Set Derivative to Zero',
+          mathExpression: '-3x^2 + 3 = 0 \\implies 3x^2 = 3 \\implies x^2 = 1 \\implies x = \\pm 1',
+          explanation: 'Critical points occur at x = 1 and x = -1.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Evaluate Height at Peak (x = 1)',
+          mathExpression: 'f(1) = -(1)^3 + 3(1) = -1 + 3 = 2.0',
+          explanation: 'The local maximum is at (1, 2). Tangent line is y = 2.0.'
+        },
+        {
+          stepNumber: 4,
+          label: 'Verify Target Reception',
+          mathExpression: 'y = 2.0 \\quad \\text{at } x = 4.0 \\quad \\checkmark',
+          explanation: 'Horizontal beam strikes (4, 2) perfectly!'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'f\'(x) = 0', name: 'Critical Condition', role: 'Horizontal tangent line' },
+        { symbol: 'x = 1', name: 'Local Maximum', role: 'Crest of the hill at height y = 2', currentValueKey: 'x0' }
+      ]
+    },
+    hints: [
+      'Take the derivative: f\'(x) = -3x² + 3.',
+      'Set f\'(x) = 0: -3x² + 3 = 0 -> 3x² = 3 -> x² = 1 -> x = ±1.',
+      'At x = 1, f(1) = -1 + 3 = 2. The horizontal tangent y = 2 hits (4, 2)!'
+    ]
+  },
+  {
+    id: 's4_l4',
+    sectorId: 'calculus',
+    sectorTitle: 'Sector 4: The Tangent Blade',
+    levelNumber: 4,
+    code: '4.4',
+    title: 'The Inflection Laser',
+    subtitle: 'Second Derivatives & Points of Inflection f\'\'(x) = 0',
+    description: 'Curve f(x) = (1/3)x³ - x² - 3x transitions from concave down to concave up. Locate the inflection point x₀ where f\'\'(x) = 0 to launch a beam along the transitional tangent into Sensor Chi at (3, -11.67).',
+    type: 'tangent_blade',
+    defaultParams: { x0: -0.5, h: 0.01 },
+    solutionParams: { x0: 1.0, h: 0.01 },
+    calculusFunction: (x: number) => (1 / 3) * x * x * x - x * x - 3 * x,
+    calculusDerivative: (x: number) => x * x - 2 * x - 3,
+    calculusFunctionLatex: 'f(x) = \\frac{1}{3}x^3 - x^2 - 3x',
+    paramControls: [
+      { key: 'x0', label: 'Inflection Point (x₀)', symbol: 'x₀', min: -1.0, max: 3.0, step: 0.25, defaultValue: -0.5, description: 'Evaluation coordinate' }
+    ],
+    targets: [
+      { id: 'sensor_chi', x: 3.0, y: -11.67, radius: 0.6, label: 'Sensor Chi (3, -11.67)' }
+    ],
+    obstacles: [
+      { id: 'concavity_shield', x: 1.5, y: -6.0, width: 0.4, height: 1.5, type: 'absorber', label: 'Baffle' }
+    ],
+    bounds: { minX: -2, maxX: 4, minY: -14, maxY: 3 },
+    curriculum: {
+      standard: 'AP Calculus AB: FUN-5 (Concavity & Inflection Points)',
+      standardName: 'Second Derivative Test & Points of Inflection',
+      topicCategory: 'Calculus I',
+      intuition: 'The second derivative f\'\'(x) describes curvature. When f\'\'(x) > 0, the curve is shaped like a cup (concave up); when f\'\'(x) < 0, it is shaped like a frown (concave down). The inflection point is where curvature flips sign and the tangent line cuts straight through the curve.',
+      keyFormulaLatex: 'f\'\'(x) = 0 \\iff 2x - 2 = 0 \\implies x = 1',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Compute First and Second Derivatives',
+          mathExpression: 'f\'(x) = x^2 - 2x - 3, \\quad f\'\'(x) = 2x - 2',
+          explanation: 'Differentiate twice with the power rule.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Solve for Inflection Point',
+          mathExpression: '2x - 2 = 0 \\implies 2x = 2 \\implies x = 1.0',
+          explanation: 'The inflection point is at x = 1.0.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Find Tangent Slope and Equation',
+          mathExpression: 'f\'(1) = 1^2 - 2(1) - 3 = -4.0, \\quad f(1) = \\frac{1}{3} - 1 - 3 = -3.67',
+          explanation: 'Equation is y - (-3.67) = -4(x - 1) -> y = -4x + 0.33.'
+        },
+        {
+          stepNumber: 4,
+          label: 'Verify at x = 3.0',
+          mathExpression: 'y(3) = -4(3) + 0.33 = -12 + 0.33 = -11.67 \\quad \\checkmark',
+          explanation: 'Strikes Sensor Chi at (3, -11.67)!'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'f\'\'(x) = 0', name: 'Inflection Condition', role: 'Point of zero curvature where bending flips direction' },
+        { symbol: 'x = 1', name: 'Inflection Coordinate', role: 'Location of transition', currentValueKey: 'x0' }
+      ]
+    },
+    hints: [
+      'Find the second derivative: f\'(x) = x² - 2x - 3, so f\'\'(x) = 2x - 2.',
+      'Set f\'\'(x) = 0: 2x - 2 = 0 -> x = 1.0.',
+      'Set the tangency point x₀ = 1.0.'
+    ]
+  },
+
+  // ==========================================
+  // SECTOR 5: THE CRYPTOGRAPHIC VAULT (DISCRETE MATH & LATTICE CRYPTO)
+  // ==========================================
+  {
+    id: 's5_l1',
+    sectorId: 'lattice',
+    sectorTitle: 'Sector 5: The Cryptographic Vault',
+    levelNumber: 1,
+    code: '5.1',
+    title: 'The Gauss Reduction Gear',
+    subtitle: 'Lagrange-Gauss 2D Lattice Reduction',
+    description: 'A discrete integer lattice is masked with a skewed, long basis: v₁ = [5, 1]ᵀ and v₂ = [3, 1]ᵀ. Apply the integer projection reduction step v₁\' = v₁ - ⌊μ⌉ v₂ to reveal the shortest basis vector.',
+    type: 'lattice_cvp',
+    defaultParams: { q_factor: 1 },
+    solutionParams: { q_factor: 2 },
+    paramControls: [
+      { key: 'q_factor', label: 'Reduction Quotient (⌊μ⌉)', symbol: 'q', min: -3, max: 4, step: 1, defaultValue: 1, description: 'Integer multiple: round((v₁ · v₂) / ||v₂||²)' }
+    ],
+    targets: [
+      { id: 'short_v', x: -1, y: -1, radius: 0.45, label: 'Shortest Vector [-1, -1]' }
+    ],
+    obstacles: [],
+    bounds: { minX: -3, maxX: 6, minY: -3, maxY: 4 },
+    curriculum: {
+      standard: 'Discrete Mathematics / Modern Cryptography (NIST Post-Quantum ML-KEM)',
+      standardName: 'Gauss-Lagrange 2D Lattice Reduction',
+      topicCategory: 'Lattice Cryptography',
+      intuition: 'Cryptographic security in post-quantum schemes relies on the hardness of finding short vectors in a lattice. While high dimensions (n=512+) make this computationally intractable, in 2D Gauss reduction subtracts nearest integer multiples of neighboring vectors until basis vectors are minimal and near-orthogonal.',
+      keyFormulaLatex: 'v_1\' = v_1 - \\lfloor \\mu \\rceil v_2, \\quad \\mu = \\frac{v_1 \\cdot v_2}{\\|v_2\\|^2}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Compute Dot Product and Norm',
+          mathExpression: 'v_1 \\cdot v_2 = (5)(3) + (1)(1) = 15 + 1 = 16, \\quad \\|v_2\\|^2 = 3^2 + 1^2 = 10',
+          explanation: 'Calculate inner product between v₁ and v₂.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Calculate Gram-Schmidt Projection Factor μ',
+          mathExpression: '\\mu = \\frac{16}{10} = 1.6 \\implies \\lfloor \\mu \\rceil = \\text{round}(1.6) = 2',
+          explanation: 'Nearest integer rounding yields q = 2.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Perform Vector Reduction',
+          mathExpression: 'v_1\' = \\begin{bmatrix} 5 \\\\ 1 \\end{bmatrix} - 2 \\begin{bmatrix} 3 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 5 - 6 \\\\ 1 - 2 \\end{bmatrix} = \\begin{bmatrix} -1 \\\\ -1 \\end{bmatrix}',
+          explanation: 'Length is reduced from √26 ≈ 5.1 down to √2 ≈ 1.41.'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 'μ', name: 'Projection Ratio', role: '(v₁ · v₂) / ||v₂||²' },
+        { symbol: '⌊μ⌉ = 2', name: 'Nearest Integer', role: 'Integer multiple subtracted to reduce length', currentValueKey: 'q_factor' }
+      ]
+    },
+    hints: [
+      'Calculate dot product: (5)(3) + (1)(1) = 16.',
+      'Norm squared of v₂ is 3² + 1² = 10.',
+      'The projection ratio is 16/10 = 1.6. Nearest integer is round(1.6) = 2!'
+    ]
+  },
+  {
+    id: 's5_l2',
+    sectorId: 'lattice',
+    sectorTitle: 'Sector 5: The Cryptographic Vault',
+    levelNumber: 2,
+    code: '5.2',
+    title: 'Babai\'s Closest Vector Vault',
+    subtitle: 'Closest Vector Problem (CVP) Decoding',
+    description: 'An intercept ciphertext coordinate t = [3.2, 4.1]ᵀ has been corrupted with noise e. Use Babai\'s rounding technique on basis B = [2, 1; 0, 2] to find the secret lattice code point.',
+    type: 'lattice_cvp',
+    defaultParams: { c1: 0, c2: 0 },
+    solutionParams: { c1: 1, c2: 2 },
+    paramControls: [
+      { key: 'c1', label: 'Coefficient c₁', symbol: 'c₁', min: -2, max: 4, step: 1, defaultValue: 0, description: 'Integer multiplier for basis vector 1' },
+      { key: 'c2', label: 'Coefficient c₂', symbol: 'c₂', min: -2, max: 4, step: 1, defaultValue: 0, description: 'Integer multiplier for basis vector 2' }
+    ],
+    targets: [
+      { id: 'lattice_node', x: 4.0, y: 4.0, radius: 0.5, label: 'Lattice Node [4, 4]' }
+    ],
+    obstacles: [],
+    bounds: { minX: -1, maxX: 6, minY: -1, maxY: 6 },
+    curriculum: {
+      standard: 'Discrete Mathematics / Post-Quantum Cryptography: CVP',
+      standardName: 'Babai\'s Nearest Plane / Rounding Algorithm',
+      topicCategory: 'Lattice Cryptography',
+      intuition: 'In lattice-based decryption, ciphertexts are deliberately perturbed by adding a small noise vector e. Because the authorized recipient possesses the orthogonal basis, they can compute continuous coordinates and simply round them to the nearest integer to eliminate the error.',
+      keyFormulaLatex: 't = B c + e \\implies c = \\lfloor B^{-1} t \\rceil',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Solve Linear System B c = t',
+          mathExpression: '\\begin{bmatrix} 2 & 1 \\\\ 0 & 2 \\end{bmatrix} \\begin{bmatrix} c_1 \\\\ c_2 \\end{bmatrix} = \\begin{bmatrix} 3.2 \\\\ 4.1 \\end{bmatrix}',
+          explanation: 'Set up system without rounding.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Solve for Continuous c₂ and Round',
+          mathExpression: '2 c_2 = 4.1 \\implies c_2 = 2.05 \\implies \\lfloor c_2 \\rceil = 2',
+          explanation: 'c₂ rounds cleanly to 2.'
+        },
+        {
+          stepNumber: 3,
+          label: 'Back-Substitute to Solve c₁',
+          mathExpression: '2 c_1 + 2 = 3.2 \\implies 2 c_1 = 1.2 \\implies c_1 = 0.6 \\implies \\lfloor c_1 \\rceil = 1',
+          explanation: 'c₁ rounds cleanly to 1.'
+        },
+        {
+          stepNumber: 4,
+          label: 'Reconstruct Secret Lattice Point',
+          mathExpression: '1 \\begin{bmatrix} 2 \\\\ 0 \\end{bmatrix} + 2 \\begin{bmatrix} 1 \\\\ 2 \\end{bmatrix} = \\begin{bmatrix} 2 + 2 \\\\ 0 + 4 \\end{bmatrix} = \\begin{bmatrix} 4 \\\\ 4 \\end{bmatrix} \\quad \\checkmark',
+          explanation: 'Target node is precisely [4, 4].'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 't', name: 'Noisy Target', role: 'Intercepted vector [3.2, 4.1] with error e' },
+        { symbol: 'c₁, c₂', name: 'Integer Coordinates', role: 'Lattice linear combination multipliers', currentValueKey: 'c1' }
+      ]
+    },
+    hints: [
+      'Basis vector 1 is [2, 0]ᵀ and basis vector 2 is [1, 2]ᵀ.',
+      'From 2·c₂ = 4.1, c₂ = 2.05, which rounds to c₂ = 2.',
+      'Then 2·c₁ + 1(2) = 3.2 -> 2·c₁ = 1.2 -> c₁ = 0.6, which rounds to c₁ = 1.'
+    ]
+  },
+  {
+    id: 's5_l3',
+    sectorId: 'lattice',
+    sectorTitle: 'Sector 5: The Cryptographic Vault',
+    levelNumber: 3,
+    code: '5.3',
+    title: 'The Noisy Channel (LWE)',
+    subtitle: 'Learning With Errors Noise Filter',
+    description: 'An encrypted message packet a·s + e is received with noise amplitude |e| ≤ 0.8. Adjust the quantization threshold filter to separate noise from the discrete modular signal.',
+    type: 'lattice_cvp',
+    defaultParams: { c1: 0, c2: 0 },
+    solutionParams: { c1: 2, c2: 1 },
+    paramControls: [
+      { key: 'c1', label: 'Signal Vector c₁', symbol: 'c₁', min: -1, max: 4, step: 1, defaultValue: 0, description: 'Basis 1 coordinate' },
+      { key: 'c2', label: 'Signal Vector c₂', symbol: 'c₂', min: -1, max: 4, step: 1, defaultValue: 0, description: 'Basis 2 coordinate' }
+    ],
+    targets: [
+      { id: 'lwe_core', x: 5.0, y: 3.0, radius: 0.5, label: 'LWE Secret [5, 3]' }
+    ],
+    obstacles: [],
+    bounds: { minX: -1, maxX: 7, minY: -1, maxY: 5 },
+    curriculum: {
+      standard: 'Post-Quantum Cryptography: Learning With Errors (LWE)',
+      standardName: 'Hardness of LWE and Trapdoor Inversion',
+      topicCategory: 'Lattice Cryptography',
+      intuition: 'Oded Regev proved that solving noisy linear equations over discrete lattices is as hard as the worst-case shortest vector problem. Decryption works because authorized users hold a private trapdoor that multiplies out the carrier, leaving an error small enough to be rounded to zero.',
+      keyFormulaLatex: 'b = \\langle a, s \\rangle + e \\pmod q, \\quad |e| < \\frac{q}{4}',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Evaluate Public Basis Vectors',
+          mathExpression: 'b_1 = [2, 1]^T, \\quad b_2 = [1, 1]^T',
+          explanation: 'Given generator basis.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Test Secret Coefficients [2, 1]',
+          mathExpression: '2 \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + 1 \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 4 + 1 \\\\ 2 + 1 \\end{bmatrix} = \\begin{bmatrix} 5 \\\\ 3 \\end{bmatrix}',
+          explanation: 'Reconstructs the true discrete core at (5, 3).'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 's', name: 'Secret Vector', role: 'Private coordinates [2, 1]' },
+        { symbol: 'e', name: 'Gaussian Error', role: 'Bounded perturbance removed by rounding' }
+      ]
+    },
+    hints: [
+      'The target is at [5, 3].',
+      'Basis 1 is [2, 1] and Basis 2 is [1, 1].',
+      'Check: 2·[2, 1] + 1·[1, 1] = [4, 2] + [1, 1] = [5, 3]. Set c₁ = 2, c₂ = 1.'
+    ]
+  },
+  {
+    id: 's5_l4',
+    sectorId: 'lattice',
+    sectorTitle: 'Sector 5: The Cryptographic Vault',
+    levelNumber: 4,
+    code: '5.4',
+    title: 'Kyber Matrix Decryption',
+    subtitle: 'Module-LWE Decryption & Core Defusal',
+    description: 'To defuse the Leviathan Core, compute the modular inner product sᵀ A + e. Select modular key coefficients to snap the noisy ciphertext vector to the root decoding key at [3, 2].',
+    type: 'lattice_cvp',
+    defaultParams: { c1: 0, c2: 0 },
+    solutionParams: { c1: 1, c2: 1 },
+    paramControls: [
+      { key: 'c1', label: 'Secret Key s₁', symbol: 's₁', min: 0, max: 3, step: 1, defaultValue: 0, description: 'Module key entry 1' },
+      { key: 'c2', label: 'Secret Key s₂', symbol: 's₂', min: 0, max: 3, step: 1, defaultValue: 0, description: 'Module key entry 2' }
+    ],
+    targets: [
+      { id: 'kyber_root', x: 3.0, y: 2.0, radius: 0.55, label: 'Decrypted Key [3, 2]' }
+    ],
+    obstacles: [],
+    bounds: { minX: -1, maxX: 5, minY: -1, maxY: 4 },
+    curriculum: {
+      standard: 'NIST FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)',
+      standardName: 'Kyber Polynomial Matrix Inversion & Noise Elimination',
+      topicCategory: 'Lattice Cryptography',
+      intuition: 'Kyber (ML-KEM) secures modern communication against quantum computers. It operates over modules—vectors of polynomials over finite rings. Decryption computes the inner product of the private vector with the ciphertext and decodes coefficients depending on whether they are closer to 0 or q/2.',
+      keyFormulaLatex: 'm = \\text{Decode}\\left( u - s^T v \\right) \\pmod q',
+      stepByStepSolution: [
+        {
+          stepNumber: 1,
+          label: 'Module Matrix Vector Multiplication',
+          mathExpression: 'v = s_1 \\cdot [2, 1]^T + s_2 \\cdot [1, 1]^T',
+          explanation: 'Reconstruct inner product over 2D lattice.'
+        },
+        {
+          stepNumber: 2,
+          label: 'Evaluate with Private Key [1, 1]',
+          mathExpression: '1 \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + 1 \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 3 \\\\ 2 \\end{bmatrix}',
+          explanation: 'Eliminates error term and yields target key [3, 2].'
+        }
+      ],
+      formulaBreakdown: [
+        { symbol: 's', name: 'Private Key', role: 'Secret vector known only to recipient' },
+        { symbol: 'u, v', name: 'Ciphertext', role: 'Encrypted payload carrying message m' }
+      ]
+    },
+    hints: [
+      'The decrypted key target is at [3, 2].',
+      'Basis vectors are [2, 1] and [1, 1].',
+      '1·[2, 1] + 1·[1, 1] = [3, 2]. Set s₁ = 1 and s₂ = 1.'
+    ]
+  }
+];
+
+export const SECTORS = [
+  { id: 'linear', code: 'S1', title: 'The Linear Grid', description: 'Algebra I: Slopes, Intercepts, Perpendiculars & Systems', color: 'cyan', levels: ['s1_l1', 's1_l2', 's1_l3', 's1_l4'] },
+  { id: 'parabola', code: 'S2', title: 'Kinetic Arcs', description: 'Algebra II: Vertex Form, Zeros, Parabolas & Trajectories', color: 'emerald', levels: ['s2_l1', 's2_l2', 's2_l3', 's2_l4'] },
+  { id: 'matrix', code: 'S3', title: 'The Warp Matrix', description: 'Linear Algebra: 2D Basis Transformations, Shears, Rotations & Determinants', color: 'violet', levels: ['s3_l1', 's3_l2', 's3_l3', 's3_l4'] },
+  { id: 'calculus', code: 'S4', title: 'The Tangent Blade', description: 'Calculus I: Secants, Power Rule, Critical Points & Inflections', color: 'amber', levels: ['s4_l1', 's4_l2', 's4_l3', 's4_l4'] },
+  { id: 'lattice', code: 'S5', title: 'The Cryptographic Vault', description: 'Discrete Math: Lattice Reduction, CVP & NIST Kyber / ML-KEM', color: 'rose', levels: ['s5_l1', 's5_l2', 's5_l3', 's5_l4'] }
+];

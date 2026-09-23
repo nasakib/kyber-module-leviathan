@@ -1,370 +1,152 @@
 import React from 'react';
-import { GameState, AppMode } from '../types/game';
-import {
-  Shield,
-  Activity,
-  Zap,
-  Volume2,
-  VolumeX,
-  HelpCircle,
-  BookOpen,
-  Sliders,
-  Crosshair,
-  Sparkles,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  ArrowDown,
-  Eye,
-  EyeOff,
-  Maximize2,
-  Minimize2,
-  GraduationCap,
-} from 'lucide-react';
+import { LevelDefinition, AppMode, UserProgressStore } from '../types/game';
+import { Compass, Volume2, VolumeX, Grid, Sparkles, BookOpen, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
 interface HUDProps {
-  gameState: GameState;
-  onSelectMode: (mode: AppMode) => void;
-  onToggleAudio: () => void;
-  onOpenDrawer: () => void;
-  onOpenInstructions: () => void;
-  onToggleCurriculumCard?: () => void;
-  onToggleAcademyCard?: () => void;
-  onToggleSolverControls?: () => void;
-  onToggleTelemetryLog?: () => void;
-  onToggleBossStats?: () => void;
-  onToggleFocusMode?: () => void;
-  onTouchMoveLane?: (direction: 'left' | 'right') => void;
-  onTouchJump?: () => void;
-  onTouchSlide?: () => void;
-  onTouchFire?: () => void;
+  currentLevel: LevelDefinition;
+  appMode: AppMode;
+  onToggleAppMode: (mode: AppMode) => void;
+  progress: UserProgressStore;
+  onOpenLevelSelect: () => void;
+  onOpenCurriculum: () => void;
+  onPrevLevel: () => void;
+  onNextLevel: () => void;
+  hasPrevLevel: boolean;
+  hasNextLevel: boolean;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
-  gameState,
-  onSelectMode,
-  onToggleAudio,
-  onOpenDrawer,
-  onOpenInstructions,
-  onToggleCurriculumCard,
-  onToggleAcademyCard,
-  onToggleSolverControls,
-  onToggleTelemetryLog,
-  onToggleBossStats,
-  onToggleFocusMode,
-  onTouchMoveLane,
-  onTouchJump,
-  onTouchSlide,
-  onTouchFire,
+  currentLevel,
+  appMode,
+  onToggleAppMode,
+  progress,
+  onOpenLevelSelect,
+  onOpenCurriculum,
+  onPrevLevel,
+  onNextLevel,
+  hasPrevLevel,
+  hasNextLevel,
+  isMuted,
+  onToggleMute,
 }) => {
+  // Calculate total stars earned
+  const totalStars = Object.values(progress).reduce((acc, p) => acc + (p.stars || 0), 0);
+
   return (
-    <div className="flex flex-col gap-2 font-mono">
-      {/* Top Mode Navigation Switcher Tabs */}
-      <div className="bg-slate-900/95 border border-slate-800 rounded-lg p-2.5 backdrop-blur flex flex-wrap items-center justify-between gap-2 shadow-xl">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wider mr-1 hidden sm:inline">
-            APP MODE:
-          </span>
+    <header className="w-full bg-slate-950/90 border-b border-slate-800/80 px-4 py-3 backdrop-blur-md sticky top-0 z-40 select-none shadow-md">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Brand & Active Level Info */}
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-bold shadow-lg shadow-cyan-500/20">
+            <Compass className="w-5 h-5" />
+          </div>
 
-          <button
-            onClick={() => onSelectMode('curriculum')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] min-w-[44px] ${
-              gameState.appMode === 'curriculum'
-                ? 'bg-purple-950 border-purple-400 text-purple-200 shadow-md glow-rose'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4 text-purple-400" />
-            <span>THE CURRICULUM</span>
-          </button>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-sm sm:text-base font-bold text-slate-100 font-mono tracking-tight">
+                VectorForge
+              </h1>
+              <span className="text-[10px] text-cyan-400 font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 font-semibold">
+                The Coordinate Engine
+              </span>
+            </div>
 
-          <button
-            onClick={() => onSelectMode('academy')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] min-w-[44px] ${
-              gameState.appMode === 'academy'
-                ? 'bg-cyan-950 border-cyan-400 text-cyan-300 shadow-md glow-cyan'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 text-cyan-400" />
-            <span>THE ACADEMY (COURSE)</span>
-          </button>
-
-          <button
-            onClick={() => onSelectMode('solver')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] min-w-[44px] ${
-              gameState.appMode === 'solver'
-                ? 'bg-amber-950 border-amber-400 text-amber-300 shadow-md glow-amber'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sliders className="w-4 h-4 text-amber-400" />
-            <span>SOLVER LAB (CALCULATOR)</span>
-          </button>
-
-          <button
-            onClick={() => onSelectMode('boss')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] min-w-[44px] ${
-              gameState.appMode === 'boss'
-                ? 'bg-rose-950 border-rose-400 text-rose-300 shadow-md glow-rose'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Crosshair className="w-4 h-4 text-rose-400" />
-            <span>LEVIATHAN ENCOUNTER</span>
-          </button>
+            {appMode === 'puzzle' ? (
+              <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+                <span className="text-cyan-300 font-bold">{currentLevel.code}</span>
+                <span>•</span>
+                <span className="truncate max-w-[200px] sm:max-w-none text-slate-300 font-medium">
+                  {currentLevel.title}
+                </span>
+                <span className="hidden sm:inline text-slate-500">({currentLevel.sectorTitle})</span>
+              </div>
+            ) : (
+              <div className="text-xs font-mono text-amber-400 font-medium">
+                Sandbox Studio • Freeform Laboratory
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Universal Focus Mode Button */}
-          {onToggleFocusMode && (
+        {/* Center / Navigation Controls (in puzzle mode) */}
+        {appMode === 'puzzle' && (
+          <div className="flex items-center space-x-1.5 self-center">
             <button
-              onClick={onToggleFocusMode}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isFocusMode
-                  ? 'bg-purple-950 border-purple-400 text-purple-200 shadow-md'
-                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-              }`}
-              title={gameState.isFocusMode ? 'Exit Canvas Focus (Show Cards)' : 'Enter Canvas Focus (Hide Cards)'}
+              onClick={onPrevLevel}
+              disabled={!hasPrevLevel}
+              className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
+              title="Previous Level"
             >
-              {gameState.isFocusMode ? (
-                <Minimize2 className="w-4 h-4 text-purple-400" />
-              ) : (
-                <Maximize2 className="w-4 h-4 text-slate-300" />
-              )}
-              <span>{gameState.isFocusMode ? 'EXIT FOCUS' : 'FOCUS VIEW'}</span>
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={onOpenLevelSelect}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono transition-colors"
+              title="Open Sector Map & Level Select"
+            >
+              <Grid className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Sectors & Levels</span>
+            </button>
+
+            <button
+              onClick={onNextLevel}
+              disabled={!hasNextLevel}
+              className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
+              title="Next Level"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Right Tools: Stars, Curriculum, Sandbox Toggle, Audio */}
+        <div className="flex items-center space-x-2.5 justify-end">
+          {/* Star Counter */}
+          <div className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold shadow-inner">
+            <Star className="w-3.5 h-3.5 fill-current" />
+            <span>{totalStars}</span>
+            <span className="text-slate-500 font-normal">/60</span>
+          </div>
+
+          {/* Curriculum Drawer Button */}
+          {appMode === 'puzzle' && (
+            <button
+              onClick={onOpenCurriculum}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold transition-colors"
+              title="Open Curriculum & Step-by-Step Derivation"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Curriculum & Steps</span>
+              <span className="sm:hidden">Math</span>
             </button>
           )}
 
-          {/* Quick Card Visibility Toggles */}
-          {gameState.appMode === 'curriculum' && onToggleCurriculumCard && (
-            <button
-              onClick={onToggleCurriculumCard}
-              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isCurriculumCardOpen
-                  ? 'bg-purple-950/80 border-purple-500 text-purple-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-              }`}
-              title="Toggle Curriculum Card visibility"
-            >
-              {gameState.isCurriculumCardOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">CURRICULUM</span>
-            </button>
-          )}
-
-          {gameState.appMode === 'academy' && onToggleAcademyCard && (
-            <button
-              onClick={onToggleAcademyCard}
-              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isAcademyCardOpen
-                  ? 'bg-cyan-950/80 border-cyan-500 text-cyan-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-              }`}
-              title="Toggle Academy Lesson Card visibility"
-            >
-              {gameState.isAcademyCardOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">LESSON</span>
-            </button>
-          )}
-
-          {gameState.appMode === 'solver' && onToggleSolverControls && (
-            <button
-              onClick={onToggleSolverControls}
-              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isSolverControlsOpen
-                  ? 'bg-amber-950/80 border-amber-500 text-amber-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-              }`}
-              title="Toggle Solver Controls visibility"
-            >
-              {gameState.isSolverControlsOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">CONTROLS</span>
-            </button>
-          )}
-
-          {gameState.appMode === 'boss' && onToggleBossStats && (
-            <button
-              onClick={onToggleBossStats}
-              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isBossStatsOpen
-                  ? 'bg-rose-950/80 border-rose-500 text-rose-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-              }`}
-              title="Toggle Boss Stats and Touch Controls"
-            >
-              {gameState.isBossStatsOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">STATS</span>
-            </button>
-          )}
-
-          {onToggleTelemetryLog && (
-            <button
-              onClick={onToggleTelemetryLog}
-              className={`flex items-center gap-1 px-2.5 py-2 rounded-lg border text-xs font-bold transition min-h-[44px] ${
-                gameState.isTelemetryLogOpen
-                  ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
-              }`}
-              title="Toggle Cryptanalysis Telemetry Log visibility"
-            >
-              {gameState.isTelemetryLogOpen ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">LOG</span>
-            </button>
-          )}
-
-          {/* Explanatory Drawer Button */}
+          {/* Mode Switcher: Campaign vs Sandbox */}
           <button
-            onClick={onOpenDrawer}
-            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-amber-950 border border-amber-800 text-amber-300 hover:bg-amber-900 transition min-h-[44px]"
+            onClick={() => onToggleAppMode(appMode === 'puzzle' ? 'sandbox' : 'puzzle')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              appMode === 'sandbox'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200'
+            }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">EXPLAIN</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{appMode === 'sandbox' ? 'Back to Campaign' : 'Sandbox Lab'}</span>
           </button>
 
+          {/* Audio Mute/Unmute */}
           <button
-            onClick={onOpenInstructions}
-            className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-cyan-950 border border-cyan-800 text-cyan-300 hover:bg-cyan-900 transition min-h-[44px]"
+            onClick={onToggleMute}
+            className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
           >
-            <HelpCircle className="w-4 h-4 text-cyan-400" />
-            <span className="hidden sm:inline">GUIDE</span>
-          </button>
-
-          <button
-            onClick={onToggleAudio}
-            className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-cyan-400 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
-            title="Toggle Audio"
-          >
-            {gameState.audioMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
           </button>
         </div>
       </div>
-
-      {/* Telemetry & Virtual Touch Controls Bar for Boss Mode */}
-      {gameState.appMode === 'boss' && !gameState.isBossStatsOpen && (
-        <div className="bg-slate-900/90 border border-rose-500/40 rounded-lg p-2 backdrop-blur flex items-center justify-between shadow-lg text-xs font-mono">
-          <div className="flex items-center gap-3">
-            <span className="text-cyan-400 font-bold">LEVIATHAN: {Math.max(0, Math.round(gameState.bossHp))} DIM</span>
-            <span className="text-emerald-400 font-bold">SHIELD: {Math.max(0, Math.round(gameState.playerHp))} HP</span>
-            <span className="text-amber-400 font-bold">{Math.round(gameState.score)} PTS</span>
-          </div>
-          {onToggleBossStats && (
-            <button
-              onClick={onToggleBossStats}
-              className="text-xs font-bold px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-slate-950 flex items-center gap-1 min-h-[36px]"
-            >
-              <Maximize2 className="w-3.5 h-3.5" /> REOPEN STATS & CONTROLS
-            </button>
-          )}
-        </div>
-      )}
-
-      {gameState.appMode === 'boss' && gameState.isBossStatsOpen && (
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 backdrop-blur shadow-xl">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-cyan-400 flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-cyan-400" />
-                  KYBER LEVIATHAN ENTROPY
-                </span>
-                <span className="text-cyan-300">
-                  {Math.max(0, Math.round(gameState.bossHp))} / {gameState.maxBossHp} DIM
-                </span>
-              </div>
-              <div className="w-full h-3.5 bg-slate-950 rounded border border-cyan-900/50 p-0.5 relative overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-emerald-400 transition-all duration-300 rounded-sm"
-                  style={{ width: `${Math.max(0, (gameState.bossHp / gameState.maxBossHp) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-emerald-400 flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                  SHIP SHIELD INTEGRITY
-                </span>
-                <span className="text-emerald-300">
-                  {Math.max(0, Math.round(gameState.playerHp))} / {gameState.maxPlayerHp} HP
-                </span>
-              </div>
-              <div className="w-full h-3.5 bg-slate-950 rounded border border-emerald-900/50 p-0.5 relative overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-300 rounded-sm ${
-                    gameState.playerHp < 30 ? 'bg-rose-500 animate-pulse' : 'bg-gradient-to-r from-emerald-600 to-emerald-400'
-                  }`}
-                  style={{ width: `${Math.max(0, (gameState.playerHp / gameState.maxPlayerHp) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-amber-400 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-amber-400" />
-                  RUNNER DISTANCE & SCORE
-                </span>
-                <span className="text-amber-300 font-bold">{Math.round(gameState.score)} PTS</span>
-              </div>
-              <div className="w-full h-3.5 bg-slate-950 rounded border border-amber-900/50 p-0.5 relative overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-200 rounded-sm"
-                  style={{ width: `${Math.min(100, (gameState.distance % 1000) / 10)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Virtual Touch D-Pad & Action Cluster for Mobile / Touch Devices */}
-          <div className="bg-slate-950/85 border border-slate-800 p-2 rounded-lg flex items-center justify-between gap-3 shadow-2xl backdrop-blur">
-            {/* D-Pad Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onTouchMoveLane && onTouchMoveLane('left')}
-                className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 hover:border-cyan-400 text-cyan-300 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition"
-                title="Move Left"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={() => onTouchMoveLane && onTouchMoveLane('right')}
-                className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 hover:border-cyan-400 text-cyan-300 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition"
-                title="Move Right"
-              >
-                <ArrowRight className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={onTouchJump}
-                className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-400 text-emerald-300 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition"
-                title="Hyper-Jump"
-              >
-                <ArrowUp className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={onTouchSlide}
-                className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 hover:border-amber-400 text-amber-300 flex items-center justify-center font-bold text-sm shadow-md active:scale-95 transition"
-                title="Slide / Duck"
-              >
-                <ArrowDown className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Prominent FIRE Blaster Button */}
-            <button
-              onClick={onTouchFire}
-              className="px-6 h-12 rounded-lg bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-rose-950/50 active:scale-95 transition"
-              title="Fire Blaster"
-            >
-              <Zap className="w-5 h-5 fill-current" />
-              <span>FIRE [SPACE]</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    </header>
   );
 };

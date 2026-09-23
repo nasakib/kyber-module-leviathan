@@ -1,0 +1,205 @@
+import React from 'react';
+import { LevelDefinition } from '../types/game';
+import { Play, RotateCcw, Lightbulb } from 'lucide-react';
+import { soundEngine } from '../utils/audio';
+
+interface ControlTerminalProps {
+  level: LevelDefinition;
+  params: Record<string, number>;
+  onParamChange: (key: string, value: number) => void;
+  onFire: () => void;
+  onReset: () => void;
+  onAutoCalculate: () => void;
+  isFiring: boolean;
+  attempts: number;
+  targetsHitCount: number;
+  totalTargets: number;
+}
+
+export const ControlTerminal: React.FC<ControlTerminalProps> = ({
+  level,
+  params,
+  onParamChange,
+  onFire,
+  onReset,
+  onAutoCalculate,
+  isFiring,
+  attempts,
+  targetsHitCount,
+  totalTargets,
+}) => {
+  // Compute formatted live formula string
+  const getFormulaDisplay = () => {
+    if (level.type === 'linear_beam') {
+      const m = params.m ?? 1;
+      const b = params.b ?? 0;
+      const sign = b >= 0 ? '+' : '-';
+      return `y = ${m.toFixed(2)}x ${sign} ${Math.abs(b).toFixed(2)}`;
+    }
+    if (level.type === 'parabolic_arc') {
+      const a = params.a ?? -0.2;
+      const h = params.h ?? 0;
+      const k = params.k ?? 0;
+      const hSign = h >= 0 ? '-' : '+';
+      const kSign = k >= 0 ? '+' : '-';
+      return `y = ${a.toFixed(2)}(x ${hSign} ${Math.abs(h).toFixed(2)})² ${kSign} ${Math.abs(k).toFixed(2)}`;
+    }
+    if (level.type === 'matrix_warp') {
+      const a = params.a ?? (params.theta_deg !== undefined ? Math.cos((params.theta_deg * Math.PI) / 180) : 1);
+      const b = params.b ?? (params.theta_deg !== undefined ? -Math.sin((params.theta_deg * Math.PI) / 180) : 0);
+      const c = params.c ?? (params.theta_deg !== undefined ? Math.sin((params.theta_deg * Math.PI) / 180) : 0);
+      const d = params.d ?? (params.theta_deg !== undefined ? Math.cos((params.theta_deg * Math.PI) / 180) : 1);
+      const det = a * d - b * c;
+      return `M = [ ${a.toFixed(2)}, ${b.toFixed(2)} ; ${c.toFixed(2)}, ${d.toFixed(2)} ] | det(M) = ${det.toFixed(2)}`;
+    }
+    if (level.type === 'tangent_blade') {
+      const x0 = params.x0 ?? 2;
+      const df = level.calculusDerivative ? level.calculusDerivative(x0) : 2 * x0;
+      const fn = level.calculusFunction ? level.calculusFunction(x0) : x0 * x0;
+      return `f'(${x0.toFixed(2)}) = ${df.toFixed(2)} | Tangent: y - ${fn.toFixed(2)} = ${df.toFixed(2)}(x - ${x0.toFixed(2)})`;
+    }
+    if (level.type === 'lattice_cvp') {
+      if (level.id === 's5_l1') {
+        const q = params.q_factor ?? 1;
+        return `v₁' = [5, 1]ᵀ - ${q} · [3, 1]ᵀ = [${5 - 3 * q}, ${1 - q}]ᵀ`;
+      }
+      const c1 = params.c1 ?? 0;
+      const c2 = params.c2 ?? 0;
+      return `s = ${c1}[2, 1]ᵀ + ${c2}[1, 1]ᵀ = [${2 * c1 + c2}, ${c1 + c2}]ᵀ`;
+    }
+    return '';
+  };
+
+  const handleSliderChange = (key: string, val: number) => {
+    soundEngine.playSliderTick();
+    onParamChange(key, val);
+  };
+
+  return (
+    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-4 md:p-5 shadow-xl backdrop-blur-md">
+      {/* Top Console Bar: Formula Display & Telemetry */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+        <div className="flex items-center space-x-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
+            Trajectory Formula Synthesizer
+          </span>
+          <div className="hidden sm:inline-block px-2.5 py-0.5 rounded bg-slate-800 text-[11px] text-cyan-300 font-mono font-medium">
+            {level.code} - {level.title}
+          </div>
+        </div>
+
+        {/* Live Formula Badge */}
+        <div className="px-3.5 py-1.5 rounded-lg bg-slate-950 border border-cyan-500/30 text-cyan-300 font-mono text-sm sm:text-base font-semibold shadow-inner truncate max-w-full">
+          {getFormulaDisplay()}
+        </div>
+
+        {/* Telemetry Status */}
+        <div className="flex items-center space-x-4 text-xs font-mono">
+          <div className="flex items-center space-x-1.5 text-slate-300">
+            <span>Targets:</span>
+            <span className={`font-bold ${targetsHitCount === totalTargets ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {targetsHitCount}/{totalTargets}
+            </span>
+          </div>
+          <div className="flex items-center space-x-1.5 text-slate-400">
+            <span>Attempts:</span>
+            <span className="font-semibold text-slate-200">{attempts}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Control Sliders and Numeric Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 pb-4">
+        {level.paramControls.map((ctrl) => {
+          const val = params[ctrl.key] ?? ctrl.defaultValue;
+          return (
+            <div
+              key={ctrl.key}
+              className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 hover:border-slate-700 transition-colors"
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-200 flex items-center space-x-1.5">
+                  <span className="text-cyan-400 font-mono font-bold text-sm">[{ctrl.symbol}]</span>
+                  <span>{ctrl.label}</span>
+                </label>
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="number"
+                    step={ctrl.step}
+                    min={ctrl.min}
+                    max={ctrl.max}
+                    value={val}
+                    onChange={(e) => {
+                      const num = parseFloat(e.target.value);
+                      if (!isNaN(num)) {
+                        handleSliderChange(ctrl.key, num);
+                      }
+                    }}
+                    className="w-16 px-1.5 py-0.5 text-right font-mono text-xs bg-slate-900 border border-slate-700 rounded text-cyan-300 focus:outline-none focus:border-cyan-400"
+                  />
+                  {ctrl.unit && <span className="text-[10px] text-slate-400 font-mono">{ctrl.unit}</span>}
+                </div>
+              </div>
+
+              <input
+                type="range"
+                min={ctrl.min}
+                max={ctrl.max}
+                step={ctrl.step}
+                value={val}
+                onChange={(e) => handleSliderChange(ctrl.key, parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none"
+              />
+
+              <div className="flex justify-between items-center mt-1 text-[10px] text-slate-500 font-mono">
+                <span>{ctrl.min}{ctrl.unit ?? ''}</span>
+                <span className="truncate max-w-[150px] text-slate-400" title={ctrl.description}>
+                  {ctrl.description}
+                </span>
+                <span>{ctrl.max}{ctrl.unit ?? ''}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action Command Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onReset}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-mono transition-colors"
+            title="Reset parameters to initial defaults"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset (R)</span>
+          </button>
+
+          <button
+            onClick={onAutoCalculate}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-amber-950/60 border border-slate-700 hover:border-amber-500/50 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-mono transition-colors"
+            title="Reveal hint or auto-calculate theoretical solution"
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span>{attempts >= 2 ? 'Auto-Calculate' : 'Get Hint'}</span>
+          </button>
+        </div>
+
+        {/* Primary Fire Button */}
+        <button
+          onClick={onFire}
+          disabled={isFiring}
+          className={`flex items-center space-x-2 px-6 py-2.5 rounded-lg font-mono font-bold text-sm tracking-wide shadow-lg transition-all ${
+            isFiring
+              ? 'bg-amber-500/50 text-amber-100 cursor-not-allowed animate-pulse'
+              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 hover:shadow-amber-500/25 active:scale-95'
+          }`}
+        >
+          <Play className={`w-4 h-4 fill-current ${isFiring ? 'animate-spin' : ''}`} />
+          <span>{isFiring ? 'SIMULATING BEAM...' : 'TEST TRAJECTORY (SPACE)'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
