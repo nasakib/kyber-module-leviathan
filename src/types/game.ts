@@ -1,3 +1,25 @@
+export type Lane = -1 | 0 | 1; // Left (-1), Center (0), Right (1)
+
+export type ShipState = 'normal' | 'jumping' | 'sliding';
+
+export interface RunnerObstacle {
+  id: string;
+  lane: Lane;
+  z: number; // 0 (far away) to 100 (player position)
+  type: 'low_barrier' | 'high_gate' | 'full_wall';
+  label: string;
+  color: string;
+}
+
+export interface RunnerPowerUp {
+  id: string;
+  lane: Lane;
+  z: number;
+  type: 'vector_fnet' | 'det_area' | 'grad_v';
+  label: string;
+  color: string;
+}
+
 export type LevelId = 1 | 2 | 3 | 4;
 
 export interface GameLevel {
@@ -10,18 +32,6 @@ export interface GameLevel {
   unlocked: boolean;
 }
 
-export interface MathPhysicsPuzzle {
-  id: string;
-  title: string;
-  question: string;
-  formula: string;
-  conceptExplanation: string;
-  targetValue: number;
-  currentValue: number;
-  unit: string;
-  solved: boolean;
-}
-
 export type BossPhaseId = 1 | 2 | 3 | 4;
 
 export interface BossPhase {
@@ -31,11 +41,6 @@ export interface BossPhase {
   minHpPercent: number;
   description: string;
   tacticalTip: string;
-}
-
-export interface Vector2D {
-  x: number;
-  y: number;
 }
 
 export interface Particle {
@@ -61,35 +66,6 @@ export interface FloatingText {
   fontSize: number;
 }
 
-export interface BossProjectile {
-  id: string;
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  speed: number;
-  damage: number;
-  type: 'binomial' | 'modular_shear';
-  color: string;
-  radius: number;
-}
-
-export interface ParryRing {
-  id: string;
-  radius: number;
-  targetRadius: number;
-  speed: number;
-  active: boolean;
-  angle: number;
-}
-
-export interface TargetCore {
-  x: number;
-  y: number;
-  active: boolean;
-  pulseTimer: number;
-}
-
 export type WeaponId = 'kannan' | 'lll' | 'bkz' | 'visor' | 'coolant';
 
 export interface Weapon {
@@ -113,24 +89,32 @@ export interface CombatLogEntry {
 }
 
 export interface GameState {
+  // Runner Ship Physics
+  shipLane: Lane;
+  shipY: number; // 0 = ground, >0 = jumping, <0 = sliding
+  shipState: ShipState;
+  speed: number;
+  distance: number;
+  score: number;
+  
+  // Runner Objects
+  obstacles: RunnerObstacle[];
+  powerups: RunnerPowerUp[];
+
   // Flow & Tutorial Mode
-  isFlowMode: boolean; // Autonomous guided flow assist
+  isFlowMode: boolean;
   showInstructionsModal: boolean;
-  tutorialStep: number;
-  suggestedAction: WeaponId | null;
 
   // Level Progression
   activeLevel: LevelId;
   unlockedLevels: LevelId[];
   levelProgress: Record<LevelId, boolean>;
   
-  // Active Interactive Puzzle
-  activePuzzle: MathPhysicsPuzzle | null;
-  
   // Boss
   bossHp: number;
   maxBossHp: number;
   bossPhase: BossPhaseId;
+  bossZ: number; // Boss position ahead in tunnel
   
   // Player
   playerHp: number;
@@ -139,24 +123,14 @@ export interface GameState {
   bkzBeta: number;
   gramSchmidtVisor: boolean;
   
-  // Vectors
-  vector1: Vector2D;
-  vector2: Vector2D;
-  targetVector: Vector2D;
-  
   // Combo & Juice
   comboCount: number;
   screenShake: number;
   tacticalHint: string;
   
-  // Parry / Phase mechanics
-  lovaszAngle: number;
-  lovaszThresholdSatisfied: boolean;
-  
   // Status
   isGameOver: boolean;
   isVictory: boolean;
-  overheated: boolean;
   
   // Audio state
   audioMuted: boolean;

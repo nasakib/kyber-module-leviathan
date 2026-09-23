@@ -3,112 +3,20 @@ import confetti from 'canvas-confetti';
 import {
   GameState,
   BossPhase,
-  Weapon,
   CombatLogEntry,
   Particle,
-  BossProjectile,
-  ParryRing,
-  TargetCore,
   FloatingText,
-  WeaponId,
+  RunnerObstacle,
+  RunnerPowerUp,
+  Lane,
   LevelId,
-  GameLevel,
-  MathPhysicsPuzzle,
 } from './types/game';
 import { soundEngine } from './utils/audio';
 import { LatticeCanvas } from './components/LatticeCanvas';
 import { HUD } from './components/HUD';
 import { CombatLog } from './components/CombatLog';
-import { LevelSelect } from './components/LevelSelect';
-import { MathChallengeCard } from './components/MathChallengeCard';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Cpu, Trophy } from 'lucide-react';
-
-const GAME_LEVELS: GameLevel[] = [
-  {
-    id: 1,
-    title: 'Algebra & Vector Physics',
-    subtitle: 'Learn 2D coordinates, force summation (F_net = F1 + F2), and displacement.',
-    category: 'STAGE 1: ALGEBRA & PHYSICS',
-    description: 'Master vector addition and force equilibrium to calculate target trajectories.',
-    learningObjectives: ['Vector coordinates (x,y)', 'Force addition (F_net = F1 + F2)', 'Pythagorean Distance'],
-    unlocked: true,
-  },
-  {
-    id: 2,
-    title: 'Geometry & Transformations',
-    subtitle: 'Learn basis vectors (b1,b2), matrix grid shearing, and determinant area.',
-    category: 'STAGE 2: GEOMETRY & FIELDS',
-    description: 'Understand how matrix transformations warp grid space and scale fundamental area det(A).',
-    learningObjectives: ['Basis vectors b1, b2', 'Matrix grid shear', 'Determinant area scaling det(A)'],
-    unlocked: true,
-  },
-  {
-    id: 3,
-    title: 'Calculus & Optimization',
-    subtitle: 'Learn potential energy curves V(x), gradient forces (∇V), and Gram-Schmidt projection.',
-    category: 'STAGE 3: CALCULUS & OPTIMIZATION',
-    description: 'Use derivatives and gradient optimization to find the shortest distance in continuous space.',
-    learningObjectives: ['Potential energy gradient ∇V', 'Vector norm minimization', 'Gram-Schmidt orthogonal plane b*'],
-    unlocked: true,
-  },
-  {
-    id: 4,
-    title: 'Post-Quantum Cryptanalysis',
-    subtitle: 'Face Kyber: The Module Leviathan using LLL, BKZ sieving, and uSVP core strikes.',
-    category: 'STAGE 4: BOSS ENCOUNTER',
-    description: 'Combine all learned concepts to break ML-KEM/Kyber-768 lattice encryption!',
-    learningObjectives: ['Kannan embedding', 'LLL Lovász parrying', 'BKZ block sieving', 'uSVP de-encapsulation'],
-    unlocked: true,
-  },
-];
-
-const PUZZLES: Record<LevelId, MathPhysicsPuzzle> = {
-  1: {
-    id: 'puz-1',
-    title: 'Level 1 Challenge: Net Force Vector Equilibrium',
-    question: 'Vector F1 is (60, -30) N and target goal is (140, -80) N. Adjust Force F2 so net force F_net matches target!',
-    formula: 'F_net = F₁ + F₂  ⇒  |F_net| = √(F_x² + F_y²)',
-    conceptExplanation: 'Vector Addition in Physics: When multiple forces act on an object, their resultant is the tip-to-tail vector sum.',
-    targetValue: 80,
-    currentValue: 40,
-    unit: 'N (Force)',
-    solved: false,
-  },
-  2: {
-    id: 'puz-2',
-    title: 'Level 2 Challenge: Fundamental Cell Area Determinant',
-    question: 'Adjust the matrix shear transformation so the fundamental domain area det(A) equals exactly 120 px².',
-    formula: 'det(A) = |b₁ₓb₂ᵧ - b₁ᵧb₂ₓ|',
-    conceptExplanation: 'Matrix Determinants in Geometry: The determinant measures how much a matrix stretches or scales area in 2D space.',
-    targetValue: 120,
-    currentValue: 60,
-    unit: 'px² (Area)',
-    solved: false,
-  },
-  3: {
-    id: 'puz-3',
-    title: 'Level 3 Challenge: Potential Energy Gradient Minimization',
-    question: 'Adjust gradient force magnitude |∇V| to reach the potential energy minimum curve target at 95 N/m.',
-    formula: '∇V = dV/dx = kx',
-    conceptExplanation: 'Calculus Optimization: Gradient vectors point in the direction of steepest energy increase; moving opposite minimizes energy.',
-    targetValue: 95,
-    currentValue: 30,
-    unit: 'N/m (Gradient)',
-    solved: false,
-  },
-  4: {
-    id: 'puz-4',
-    title: 'Level 4 Challenge: Lovász Parameter Alignment',
-    question: 'Set LLL reduction parameter δ to match the Lovász threshold condition δ = 0.75.',
-    formula: 'δ · ||bᵢ*||² ≤ ||bᵢ₊₁* + μᵢ₊₁,ᵢ bᵢ*||²',
-    conceptExplanation: 'Post-Quantum Lattice Reduction: LLL reduction ensures basis vectors are sufficiently short and orthogonal.',
-    targetValue: 0.75 * 100,
-    currentValue: 0.5 * 100,
-    unit: '% (δ parameter)',
-    solved: false,
-  },
-};
 
 const BOSS_PHASES: Record<number, BossPhase> = {
   1: {
@@ -116,109 +24,54 @@ const BOSS_PHASES: Record<number, BossPhase> = {
     name: "Kannan's Embedding",
     subtitle: "Lattice Primal Binding (100% - 75% HP)",
     minHpPercent: 75,
-    description: "Leviathan hovers in noisy space (t = As + e). Deploy Kannan's Anchor to bind the target vector.",
-    tacticalTip: "Phase 1: Press [1] for Anchor Lock to pin down noisy lattice vectors into the grid!",
+    description: "Leviathan hovers in noisy space. Collect vector Orbs and dodge noise barriers!",
+    tacticalTip: "Use ARROW KEYS (← →) to change lanes, (↑) to JUMP over barriers, and (↓) to SLIDE!",
   },
   2: {
     id: 2,
     name: "LLL Parry Dance",
     subtitle: "Lovász Basis Reduction (75% - 40% HP)",
     minHpPercent: 40,
-    description: "Boss sweeps skewed basis vectors. Time LLL Shears when vectors align (δ = 0.75).",
-    tacticalTip: "Phase 2: Wait until the shrinking blue ring enters the GREEN target circle, then press [2] to PARRY!",
+    description: "Matrix shears sweep across lanes. Slide under high gates using (↓) Down Arrow!",
+    tacticalTip: "Press (↓) DOWN ARROW to SLIDE under high matrix shear gates!",
   },
   3: {
     id: 3,
     name: "BKZ Battery & Sieving",
     subtitle: "Block Reduction & Memory Heat (40% - 10% HP)",
     minHpPercent: 10,
-    description: "Dial Block Size (β) from 20 to 120. Higher β deals massive damage but builds Memory Heat (2^0.292β ops).",
-    tacticalTip: "Phase 3: Adjust Block Size β slider for massive damage! Press [5] Coolant before Heat reaches 100%!",
+    description: "Collect STEM powerups (F_net, det(A), ∇V) to blast the Leviathan's core!",
+    tacticalTip: "Press [SPACEBAR] to fire your particle blaster and blast barriers!",
   },
   4: {
     id: 4,
     name: "uSVP Core Strike",
     subtitle: "De-encapsulation Final Strike (10% - 0% HP)",
     minHpPercent: 0,
-    description: "Noise separates from Gaussian background. Click the anomalous vector on canvas to de-encapsulate!",
-    tacticalTip: "Phase 4: FINAL STRIKE! Find the red target crosshair on the canvas and CLICK IT to win!",
+    description: "Final strike window! Collect the anomalous vector orb to win!",
+    tacticalTip: "FINAL STRIKE! Dodge barriers and press [SPACEBAR] to de-encapsulate!",
   },
 };
 
-const INITIAL_WEAPONS: Weapon[] = [
-  {
-    id: 'kannan',
-    name: "Kannan's Anchor",
-    simpleName: 'Anchor Lock',
-    cooldown: 4.0,
-    currentCooldown: 0,
-    description: "Locks target vector into primal lattice coordinates.",
-    simpleGuide: "Locks noisy targets to the origin. Extra damage in Phase 1!",
-    shortcut: '1',
-    iconName: 'anchor',
-  },
-  {
-    id: 'lll',
-    name: 'LLL Shearing Blades',
-    simpleName: 'Parry Blade',
-    cooldown: 1.2,
-    currentCooldown: 0,
-    description: "Size-reduces basis vectors. Bonus damage when timed with Lovász threshold (δ=0.75).",
-    simpleGuide: "Time this with the green ring for CRITICAL PARRY damage!",
-    shortcut: '2',
-    iconName: 'scissors',
-  },
-  {
-    id: 'bkz',
-    name: 'BKZ Siege Cannon',
-    simpleName: 'Power Cannon',
-    cooldown: 0.5,
-    currentCooldown: 0,
-    description: "Deals heavy damage scaling with Block Size β. Fills Memory Heat buffer.",
-    simpleGuide: "Fires heavy blast scaled by β slider. Watch out for Heat!",
-    shortcut: '3',
-    iconName: 'flame',
-  },
-  {
-    id: 'visor',
-    name: 'Gram-Schmidt Visor',
-    simpleName: 'Grid Visor',
-    cooldown: 0.0,
-    currentCooldown: 0,
-    description: "Toggles orthogonal projection planes (b_i*) on canvas.",
-    simpleGuide: "Toggles 90° reference grid lines to reveal hidden alignment.",
-    shortcut: '4',
-    iconName: 'eye',
-  },
-  {
-    id: 'coolant',
-    name: 'Sieve Coolant',
-    simpleName: 'Heat Coolant',
-    cooldown: 6.0,
-    currentCooldown: 0,
-    description: "Flushes Sieve Memory Heat buffer by 40%.",
-    simpleGuide: "Flushes 40% processing heat to prevent emergency crash.",
-    shortcut: '5',
-    iconName: 'wind',
-  },
-];
-
 export function App() {
   const [gameState, setGameState] = useState<GameState>({
+    shipLane: 0,
+    shipY: 0,
+    shipState: 'normal',
+    speed: 1.0,
+    distance: 0,
+    score: 0,
+    obstacles: [],
+    powerups: [],
     isFlowMode: true,
     showInstructionsModal: false,
-    tutorialStep: 1,
-    suggestedAction: 'kannan',
     activeLevel: 1,
     unlockedLevels: [1, 2, 3, 4],
     levelProgress: { 1: false, 2: false, 3: false, 4: false },
-    activePuzzle: PUZZLES[1],
-    vector1: { x: 60, y: -30 },
-    vector2: { x: 40, y: -20 },
-    targetVector: { x: 140, y: -80 },
     bossHp: 768,
     maxBossHp: 768,
     bossPhase: 1,
+    bossZ: 0,
     playerHp: 100,
     maxPlayerHp: 100,
     memoryHeat: 0,
@@ -226,31 +79,16 @@ export function App() {
     gramSchmidtVisor: false,
     comboCount: 0,
     screenShake: 0,
-    tacticalHint: "Guided Flow Active: Press highlighted key [1] Anchor Lock!",
-    lovaszAngle: 0,
-    lovaszThresholdSatisfied: false,
+    tacticalHint: "Use ARROW KEYS (← →) to change lanes, (↑) to JUMP, (↓) to SLIDE, [SPACE] to BLAST!",
     isGameOver: false,
     isVictory: false,
-    overheated: false,
     audioMuted: false,
     audioInitialized: false,
   });
 
-  const [weapons, setWeapons] = useState<Weapon[]>(INITIAL_WEAPONS);
   const [logs, setLogs] = useState<CombatLogEntry[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const [projectiles] = useState<BossProjectile[]>([]);
-  const [parryRing, setParryRing] = useState<ParryRing | null>({
-    id: 'ring-1',
-    radius: 180,
-    targetRadius: 70,
-    speed: 1.5,
-    active: true,
-    angle: 0,
-  });
-
-  const [targetCore, setTargetCore] = useState<TargetCore | null>(null);
 
   const addLog = useCallback(
     (text: string, type: CombatLogEntry['type'] = 'info', simpleTranslation?: string) => {
@@ -275,7 +113,7 @@ export function App() {
   );
 
   useEffect(() => {
-    addLog("GUIDED FLOW MODE ACTIVE: FOLLOW GLOWING KEYBIND SUGGESTIONS FOR EFFORTLESS PLAY", "warning", "Guided Flow Mode enabled: follow highlighted buttons to play!");
+    addLog("SPACE RUNNER ENGINE INITIALIZED: USE ARROW KEYS TO FLY", "warning", "Controls: Arrow Left/Right to change lanes, Up to jump, Down to slide, Space to shoot!");
   }, [addLog]);
 
   const initAudioCtx = useCallback(() => {
@@ -321,7 +159,98 @@ export function App() {
     setParticles((prev) => [...prev, ...newParticles]);
   };
 
-  // Main tick loop
+  // Handle Arrow Key Controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      initAudioCtx();
+      if (gameState.isGameOver || gameState.isVictory) return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          setGameState((prev) => {
+            const nextLane = Math.max(-1, prev.shipLane - 1) as Lane;
+            soundEngine.playAnchor();
+            return { ...prev, shipLane: nextLane };
+          });
+          break;
+
+        case 'ArrowRight':
+          setGameState((prev) => {
+            const nextLane = Math.min(1, prev.shipLane + 1) as Lane;
+            soundEngine.playAnchor();
+            return { ...prev, shipLane: nextLane };
+          });
+          break;
+
+        case 'ArrowUp':
+          setGameState((prev) => {
+            if (prev.shipState !== 'jumping') {
+              soundEngine.playParry(true);
+              return { ...prev, shipY: 70, shipState: 'jumping' };
+            }
+            return prev;
+          });
+          break;
+
+        case 'ArrowDown':
+          setGameState((prev) => {
+            if (prev.shipState !== 'sliding') {
+              soundEngine.playCoolant();
+              return { ...prev, shipY: -25, shipState: 'sliding' };
+            }
+            return prev;
+          });
+          break;
+
+        case ' ': // Spacebar to Blast
+          handleFireBlaster();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [initAudioCtx, gameState.isGameOver, gameState.isVictory]);
+
+  // Fire Blaster Action
+  const handleFireBlaster = () => {
+    soundEngine.playLaser();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    spawnParticles(centerX, centerY, '#38bdf8', 25);
+    spawnFloatingText(`💥 BLASTER BLAST! -40 DIM`, centerX, centerY, '#38bdf8', 20);
+
+    setGameState((prev) => {
+      const damage = 40;
+      const nextHp = Math.max(0, prev.bossHp - damage);
+
+      // Check obstacle destruction in current lane
+      const updatedObstacles = prev.obstacles.filter(
+        (obs) => !(obs.lane === prev.shipLane && obs.z > 50)
+      );
+
+      let isVictorious = false;
+      if (nextHp <= 0) {
+        isVictorious = true;
+        soundEngine.playExplosion();
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+      }
+
+      return {
+        ...prev,
+        bossHp: nextHp,
+        score: prev.score + 100,
+        obstacles: updatedObstacles,
+        isVictory: isVictorious,
+        screenShake: 3,
+      };
+    });
+
+    addLog("PARTICLE BLASTER FIRED! Lattice barrier damaged.", "player_action", "Blaster blast hit the Leviathan! (-40 Boss Entropy)");
+  };
+
+  // Main 60 FPS Tunnel Runner physics update loop
   const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
     if (gameState.isGameOver || gameState.isVictory) return;
@@ -331,150 +260,231 @@ export function App() {
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
 
-      setWeapons((prev) =>
-        prev.map((w) => ({
-          ...w,
-          currentCooldown: Math.max(0, w.currentCooldown - dt),
-        }))
-      );
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight - 100;
 
+      // 1. Update Distance, Score & Gravity
       setGameState((prev) => {
-        const newAngle = (prev.lovaszAngle + dt * 1.8) % (Math.PI * 2);
-        const thresholdMet = Math.abs(Math.sin(newAngle * 2)) > 0.85;
+        const nextDist = prev.distance + prev.speed * 2.5;
+        const nextScore = prev.score + Math.round(prev.speed);
 
-        // Determine suggested action for Guided Flow Mode
-        let suggested: WeaponId | null = 'kannan';
-        if (prev.memoryHeat > 70) {
-          suggested = 'coolant';
-        } else if (prev.activeLevel === 4 && prev.bossPhase === 2 && thresholdMet) {
-          suggested = 'lll';
-        } else if (prev.activeLevel === 4 && prev.bossPhase === 3) {
-          suggested = 'bkz';
+        // Ship gravity recovery (jumping & sliding)
+        let nextShipY = prev.shipY;
+        let nextShipState = prev.shipState;
+
+        if (prev.shipState === 'jumping') {
+          nextShipY = Math.max(0, prev.shipY - dt * 180);
+          if (nextShipY === 0) nextShipState = 'normal';
+        } else if (prev.shipState === 'sliding') {
+          nextShipY = Math.min(0, prev.shipY + dt * 80);
+          if (nextShipY === 0) nextShipState = 'normal';
+        }
+
+        // Check boss phase transition
+        const hpPercent = (prev.bossHp / prev.maxBossHp) * 100;
+        let nextPhase: LevelId = prev.bossPhase;
+        if (hpPercent <= 10) nextPhase = 4;
+        else if (hpPercent <= 40) nextPhase = 3;
+        else if (hpPercent <= 75) nextPhase = 2;
+
+        return {
+          ...prev,
+          distance: nextDist,
+          score: nextScore,
+          shipY: nextShipY,
+          shipState: nextShipState,
+          bossPhase: nextPhase,
+          screenShake: Math.max(0, prev.screenShake - dt * 8),
+        };
+      });
+
+      // 2. Obstacle Spawner (Random Lanes)
+      if (Math.random() < 0.05) {
+        const randomLane = (Math.floor(Math.random() * 3) - 1) as Lane;
+        const types: ('low_barrier' | 'high_gate' | 'full_wall')[] = ['low_barrier', 'high_gate', 'full_wall'];
+        const chosenType = types[Math.floor(Math.random() * types.length)];
+        const labels = {
+          low_barrier: 'NOISE (JUMP ↑)',
+          high_gate: 'SHEAR (SLIDE ↓)',
+          full_wall: 'WALL (DODGE ← →)',
+        };
+        const colors = {
+          low_barrier: '#f43f5e',
+          high_gate: '#fbbf24',
+          full_wall: '#e11d48',
+        };
+
+        setGameState((prev) => ({
+          ...prev,
+          obstacles: [
+            ...prev.obstacles,
+            {
+              id: Math.random().toString(),
+              lane: randomLane,
+              z: 0,
+              type: chosenType,
+              label: labels[chosenType],
+              color: colors[chosenType],
+            },
+          ],
+        }));
+      }
+
+      // 3. STEM Powerup Spawner
+      if (Math.random() < 0.03) {
+        const randomLane = (Math.floor(Math.random() * 3) - 1) as Lane;
+        const powerupTypes: ('vector_fnet' | 'det_area' | 'grad_v')[] = ['vector_fnet', 'det_area', 'grad_v'];
+        const chosenPw = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+        const labels = { vector_fnet: 'F_net', det_area: 'det(A)', grad_v: '∇V' };
+        const colors = { vector_fnet: '#34d399', det_area: '#22d3ee', grad_v: '#a855f7' };
+
+        setGameState((prev) => ({
+          ...prev,
+          powerups: [
+            ...prev.powerups,
+            {
+              id: Math.random().toString(),
+              lane: randomLane,
+              z: 0,
+              type: chosenPw,
+              label: labels[chosenPw],
+              color: colors[chosenPw],
+            },
+          ],
+        }));
+      }
+
+      // 4. Move & Collide Obstacles
+      setGameState((prev) => {
+        const remainingObstacles: RunnerObstacle[] = [];
+        let hitHpLoss = 0;
+
+        prev.obstacles.forEach((obs) => {
+          const newZ = obs.z + prev.speed * 2.2;
+
+          if (newZ >= 90 && newZ <= 100 && obs.lane === prev.shipLane) {
+            // Collision Check!
+            let isSafe = false;
+
+            if (obs.type === 'low_barrier' && prev.shipY > 40) isSafe = true; // jumped over
+            if (obs.type === 'high_gate' && prev.shipY < -15) isSafe = true; // slided under
+
+            if (!isSafe) {
+              hitHpLoss += 15;
+              spawnParticles(centerX, centerY, '#f43f5e', 30);
+              spawnFloatingText(`💥 IMPACT! -15 HP`, centerX, centerY, '#f43f5e', 22);
+              soundEngine.playAlarm();
+              addLog(`COLLISION IMPACT with ${obs.label}!`, "boss_attack", "Obstacle hit! Dodge with Arrow Keys!");
+            }
+          } else if (newZ < 100) {
+            remainingObstacles.push({ ...obs, z: newZ });
+          }
+        });
+
+        const nextHp = Math.max(0, prev.playerHp - hitHpLoss);
+        let gameOver = prev.isGameOver;
+
+        if (nextHp <= 0) {
+          gameOver = true;
+          soundEngine.playExplosion();
+          addLog("SHIP INTEGRITY DESTROYED BY NOISE BARRIERS", "critical", "Game Over! Press Restart to try again.");
         }
 
         return {
           ...prev,
-          lovaszAngle: newAngle,
-          lovaszThresholdSatisfied: thresholdMet,
-          suggestedAction: suggested,
-          screenShake: Math.max(0, prev.screenShake - dt * 8),
-          memoryHeat: Math.max(0, prev.memoryHeat - dt * 3),
+          obstacles: remainingObstacles,
+          playerHp: nextHp,
+          isGameOver: gameOver,
+          screenShake: hitHpLoss > 0 ? 5 : prev.screenShake,
         };
       });
 
-      // Update Parry Ring
-      setParryRing((prev) => {
-        if (!prev) return null;
-        let newRadius = prev.radius - prev.speed * 2.5;
-        if (newRadius <= 20) newRadius = 200;
-        return { ...prev, radius: newRadius };
+      // 5. Move & Collect Powerups
+      setGameState((prev) => {
+        const remainingPowerups: RunnerPowerUp[] = [];
+        let scoreAdd = 0;
+        let bossDamageAdd = 0;
+
+        prev.powerups.forEach((pw) => {
+          const newZ = pw.z + prev.speed * 2.2;
+
+          if (newZ >= 90 && newZ <= 100 && pw.lane === prev.shipLane) {
+            // Collect Powerup!
+            soundEngine.playParry(true);
+            scoreAdd += 500;
+            bossDamageAdd += 35;
+
+            spawnParticles(centerX, centerY, pw.color, 25);
+            spawnFloatingText(`✨ COLLECTED ${pw.label}! +500 PTS`, centerX, centerY, pw.color, 20);
+            addLog(`COLLECTED STEM POWERUP (${pw.label})!`, "player_action", `Collected ${pw.label}! (-35 Boss Entropy, +500 PTS)`);
+          } else if (newZ < 100) {
+            remainingPowerups.push({ ...pw, z: newZ });
+          }
+        });
+
+        const nextBossHp = Math.max(0, prev.bossHp - bossDamageAdd);
+        let isVictorious = prev.isVictory;
+
+        if (nextBossHp <= 0) {
+          isVictorious = true;
+          soundEngine.playExplosion();
+          confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        }
+
+        return {
+          ...prev,
+          powerups: remainingPowerups,
+          score: prev.score + scoreAdd,
+          bossHp: nextBossHp,
+          isVictory: isVictorious,
+        };
       });
 
-      // Update Phase 4 target core
-      if (gameState.activeLevel === 4 && gameState.bossPhase === 4) {
-        setTargetCore((prev) => {
-          if (!prev) return { x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200, active: true, pulseTimer: 0 };
-          return { ...prev, pulseTimer: prev.pulseTimer + dt };
-        });
-      }
-
-      // Projectiles & Particles
+      // 6. Update Particle & Floating Text physics
       setParticles((prev) => prev.map((p) => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, life: p.life - 1 })).filter((p) => p.life > 0));
       setFloatingTexts((prev) => prev.map((ft) => ({ ...ft, y: ft.y - 0.8, life: ft.life - 1 })).filter((ft) => ft.life > 0));
 
     }, 50);
 
     return () => clearInterval(interval);
-  }, [gameState.isGameOver, gameState.isVictory, gameState.activeLevel, gameState.bossPhase]);
+  }, [gameState.isGameOver, gameState.isVictory, addLog]);
 
-  // Level switching handler
-  const handleSelectLevel = (levelId: LevelId) => {
-    initAudioCtx();
-    setGameState((prev) => ({
-      ...prev,
-      activeLevel: levelId,
-      activePuzzle: PUZZLES[levelId],
-      tacticalHint: `Level ${levelId}: ${GAME_LEVELS.find((l) => l.id === levelId)?.subtitle}`,
-    }));
-    addLog(`SWITCHED TO STAGE ${levelId}: ${GAME_LEVELS.find((l) => l.id === levelId)?.title}`, "phase_change");
-  };
-
-  const handleSolvePuzzle = () => {
-    soundEngine.playParry(true);
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    spawnParticles(centerX, centerY, '#34d399', 50);
-    spawnFloatingText(`✨ PUZZLE SOLVED! +STAGE BOOST`, centerX, centerY, '#34d399', 22);
-
-    addLog(`STEM CHALLENGE COMPLETED FOR STAGE ${gameState.activeLevel}!`, "critical", "Concept verified!");
-
-    setGameState((prev) => ({
-      ...prev,
-      levelProgress: { ...prev.levelProgress, [prev.activeLevel]: true },
-      playerHp: Math.min(100, prev.playerHp + 20),
-      comboCount: prev.comboCount + 1,
-    }));
-  };
-
-  // Weapon Handler
-  const handleUseWeapon = (weaponId: WeaponId) => {
-    initAudioCtx();
-    if (gameState.isGameOver || gameState.isVictory) return;
-
-    const weapon = weapons.find((w) => w.id === weaponId);
-    if (!weapon || weapon.currentCooldown > 0) return;
-
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2 - 40;
-
-    switch (weaponId) {
-      case 'kannan': {
-        soundEngine.playAnchor();
-        const damage = 95;
-        setGameState((prev) => ({ ...prev, bossHp: Math.max(0, prev.bossHp - damage), comboCount: prev.comboCount + 1 }));
-        spawnParticles(centerX, centerY, '#22d3ee', 25);
-        spawnFloatingText(`ANCHOR LOCKED! -${damage} DIM`, centerX, centerY, '#22d3ee', 20);
-        addLog(`Kannan's Anchor Deployed! Dealt ${damage} damage.`, "player_action");
-        break;
-      }
-      case 'lll': {
-        soundEngine.playParry(true);
-        const damage = 110;
-        setGameState((prev) => ({ ...prev, bossHp: Math.max(0, prev.bossHp - damage), comboCount: prev.comboCount + 1 }));
-        spawnParticles(centerX, centerY, '#34d399', 40);
-        spawnFloatingText(`⚡ PERFECT PARRY! -${damage} DIM`, centerX, centerY, '#34d399', 22);
-        addLog(`CRITICAL LLL PARRY! Dealt ${damage} damage.`, "critical");
-        break;
-      }
-      case 'bkz': {
-        soundEngine.playLaser();
-        const damage = Math.round(gameState.bkzBeta * 1.3);
-        setGameState((prev) => ({ ...prev, bossHp: Math.max(0, prev.bossHp - damage), memoryHeat: Math.min(100, prev.memoryHeat + 20) }));
-        spawnParticles(centerX, centerY, '#fbbf24', 30);
-        spawnFloatingText(`BKZ BLAST! -${damage} DIM`, centerX, centerY, '#fbbf24', 18);
-        addLog(`BKZ Cannon Fired (β=${gameState.bkzBeta})! Dealt ${damage} damage.`, "player_action");
-        break;
-      }
-      case 'visor': {
-        setGameState((prev) => ({ ...prev, gramSchmidtVisor: !prev.gramSchmidtVisor }));
-        return;
-      }
-      case 'coolant': {
-        soundEngine.playCoolant();
-        setGameState((prev) => ({ ...prev, memoryHeat: Math.max(0, prev.memoryHeat - 40) }));
-        spawnFloatingText(`❄️ COOLANT FLUSH! -40% HEAT`, centerX, centerY, '#38bdf8', 18);
-        break;
-      }
-    }
-
-    setWeapons((prev) => prev.map((w) => (w.id === weaponId ? { ...w, currentCooldown: w.cooldown } : w)));
-  };
-
-  const handleTargetCoreClick = () => {
-    initAudioCtx();
-    soundEngine.playExplosion();
-    setGameState((prev) => ({ ...prev, bossHp: 0, isVictory: true }));
-    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+  // Restart Handler
+  const handleRestart = () => {
+    setGameState({
+      shipLane: 0,
+      shipY: 0,
+      shipState: 'normal',
+      speed: 1.0,
+      distance: 0,
+      score: 0,
+      obstacles: [],
+      powerups: [],
+      isFlowMode: true,
+      showInstructionsModal: false,
+      activeLevel: 1,
+      unlockedLevels: [1, 2, 3, 4],
+      levelProgress: { 1: false, 2: false, 3: false, 4: false },
+      bossHp: 768,
+      maxBossHp: 768,
+      bossPhase: 1,
+      bossZ: 0,
+      playerHp: 100,
+      maxPlayerHp: 100,
+      memoryHeat: 0,
+      bkzBeta: 40,
+      gramSchmidtVisor: false,
+      comboCount: 0,
+      screenShake: 0,
+      tacticalHint: "Use ARROW KEYS (← →) to change lanes, (↑) to JUMP, (↓) to SLIDE, [SPACE] to BLAST!",
+      isGameOver: false,
+      isVictory: false,
+      audioMuted: false,
+      audioInitialized: true,
+    });
+    setLogs([]);
+    setFloatingTexts([]);
+    addLog("SPACE RUNNER ENGINE REBOOTED", "warning", "Reboot complete! Fly with Arrow Keys!");
   };
 
   return (
@@ -483,36 +493,21 @@ export function App() {
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-cyan-400 animate-pulse" />
           <h1 className="text-base md:text-lg font-bold tracking-wider text-slate-100 font-mono">
-            KYBER: <span className="text-cyan-400">THE MODULE LEVIATHAN</span>
+            KYBER: <span className="text-cyan-400">LATTICE TUNNEL RUNNER</span>
           </h1>
           <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400 font-mono">
-            Guided STEM Onboarding Engine
+            3D Space Subway Surfers Arcade Mode
           </span>
         </div>
       </header>
-
-      {/* Curriculum Level Select Bar */}
-      <div className="shrink-0">
-        <LevelSelect levels={GAME_LEVELS} activeLevel={gameState.activeLevel} onSelectLevel={handleSelectLevel} />
-      </div>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2.5 min-h-0">
         <div className="lg:col-span-3 flex flex-col min-h-0 relative">
           <LatticeCanvas
             gameState={gameState}
             particles={particles}
-            projectiles={projectiles}
             floatingTexts={floatingTexts}
-            parryRing={parryRing}
-            targetCore={targetCore}
-            onTargetCoreClick={handleTargetCoreClick}
           />
-
-          {gameState.activePuzzle && (
-            <div className="absolute bottom-3 left-3 right-3 max-w-lg z-40">
-              <MathChallengeCard puzzle={gameState.activePuzzle} onSolve={handleSolvePuzzle} />
-            </div>
-          )}
         </div>
 
         <div className="lg:col-span-1 flex flex-col min-h-0">
@@ -523,10 +518,7 @@ export function App() {
       <footer className="shrink-0">
         <HUD
           gameState={gameState}
-          weapons={weapons}
           currentPhaseInfo={BOSS_PHASES[gameState.bossPhase]}
-          onUseWeapon={handleUseWeapon}
-          onBetaChange={(newBeta) => setGameState((prev) => ({ ...prev, bkzBeta: newBeta }))}
           onToggleAudio={() => {
             const nextMuted = !gameState.audioMuted;
             soundEngine.setMuted(nextMuted);
@@ -545,16 +537,42 @@ export function App() {
         />
       )}
 
+      {/* Victory Modal */}
       {gameState.isVictory && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border-2 border-emerald-500 rounded-xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 font-mono">
             <Trophy className="w-12 h-12 text-emerald-400 mx-auto" />
-            <h2 className="text-2xl font-bold text-emerald-400">CURRICULUM MASTERED!</h2>
+            <h2 className="text-2xl font-bold text-emerald-400">KYBER LEVIATHAN DESTROYED!</h2>
             <p className="text-slate-300 text-xs leading-relaxed">
-              You mastered Algebra, Physics, Geometry, Calculus, and Post-Quantum Cryptanalysis to defeat the Kyber Leviathan!
+              Awesome job! You navigated the 3D lattice tunnel, dodged noise barriers, collected STEM energy crystals, and blasted the Kyber Leviathan!
             </p>
-            <button onClick={() => window.location.reload()} className="w-full py-3 bg-emerald-600 font-bold rounded-lg text-slate-950">
+            <div className="bg-slate-950 p-3 rounded border border-slate-800 text-left text-xs text-slate-300 space-y-1">
+              <div className="flex justify-between">
+                <span>Final Distance:</span>
+                <span className="text-cyan-400 font-bold">{Math.round(gameState.distance)} M</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Final Score:</span>
+                <span className="text-amber-400 font-bold">{gameState.score} PTS</span>
+              </div>
+            </div>
+            <button onClick={handleRestart} className="w-full py-3 bg-emerald-600 font-bold rounded-lg text-slate-950">
               PLAY AGAIN
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal */}
+      {gameState.isGameOver && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border-2 border-rose-500 rounded-xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 font-mono">
+            <h2 className="text-2xl font-bold text-rose-400">SHIP SHIELD CRASHED</h2>
+            <p className="text-slate-300 text-xs leading-relaxed">
+              Noise barriers destroyed your starfighter! Tip: Use Up Arrow (↑) to JUMP over red low barriers and Down Arrow (↓) to SLIDE under yellow gates!
+            </p>
+            <button onClick={handleRestart} className="w-full py-3 bg-rose-600 font-bold rounded-lg text-slate-950">
+              REBOOT RUNNER
             </button>
           </div>
         </div>
